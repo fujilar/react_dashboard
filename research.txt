@@ -1,0 +1,11 @@
+For ServiceNow, the SLA compliance might look something like this:
+
+{
+  "sys_id": "incident_sys_id",
+  "number": "INC0010001",
+  "sla_status": "Breached", // or "Met"
+  "time_left": "2h 30m",
+  "sla_breach": true,
+  "resolution_time": "2024-11-14T12:30:00Z",
+  "start_time": "2024-11-14T09:00:00Z"
+}
