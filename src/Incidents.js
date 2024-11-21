@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Grid2, Card, CardContent, Typography, Button, ButtonGroup } from '@mui/material';
+import { Grid, Grid2, Card, CardContent, Typography, Button, ButtonGroup } from '@mui/material';
 import { Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -22,7 +22,6 @@ const sampleIncidents = [
     { id: 5, status: 'On Hold', sla: 'Not Met', date: new Date('2024-10-20') },
     { id: 6, status: 'Open', sla: 'Met', date: new Date('2023-12-31') },
 ];
-
 
 // Utility function to filter incidents based on the selected filter
 const filterIncidents = (incidents, filter) => {
@@ -79,15 +78,6 @@ const Incidents = () => {
     const [filter, setFilter] = useState('All');
     const filteredIncidents = filterIncidents(sampleIncidents, filter);
 
-    // const [ticketCounts, setTicketCounts] = useState({
-    //     totalIncidents: sampleIncidents.length,
-    //     openIncidents: sampleIncidents.filter(incident => incident.status === 'Open').length,
-    //     inProgressIncidents: sampleIncidents.filter(incident => incident.status === 'In Progress').length,
-    //     onHoldIncidents: sampleIncidents.filter(incident => incident.status === 'On Hold').length,
-    //     resolvedIncidents: sampleIncidents.filter(incident => incident.status === 'Resolved').length,
-    //     closedIncidents: sampleIncidents.filter(incident => incident.status === 'Closed').length,
-    // });
-
     const dashboardItems = [
         { label: 'Total Incidents', value: filteredIncidents.length, color: '#2196f3' },
         { label: 'Open Incidents', value: filteredIncidents.filter(incident => incident.status === 'Open').length, color: '#f44336' },
@@ -118,55 +108,68 @@ const Incidents = () => {
     return (
         <div style={{ padding: '20px' }}>
             
-            {/* Page title */}
-            <Typography variant="h4" gutterBottom>Incidents Page</Typography>
+            <Typography variant="h4" gutterBottom>
+                Incidents Page
+            </Typography>
 
-            {/* Button group */}
-            <ButtonGroup style={{ marginBottom: '20px' }}>
+            <ButtonGroup style={{ 
+                marginBottom: '20px', 
+                marginRight: '10px'
+                }}>
                 {['All', 'Today', '7 Days', 'Year'].map(label => (
                     <Button 
                         key={label}
                         variant={filter === label ? 'contained' : 'outlined'}
                         onClick={() => setFilter(label)}
+                        sx={{
+                            fontSize: '10px', // Adjust font size here
+                        }}
                     >
                         {label}
                     </Button>
                 ))}
             </ButtonGroup>
 
-            {/* Dashboard cards */}
-            <Grid2 
+            <Grid
                 container 
-                spacing={3}
+                // spacing={3}
+                style={{ 
+                    width: '100%', 
+                    margin: '0 auto', // Centers the grid container
+                }}
                 >
                 {dashboardItems.map((item, index) => (
-                    <Grid2 
+                    <Grid
                         item 
                         xs={12} 
                         sm={6} 
                         md={4} 
                         lg={2} 
-                        key={index}>
-                            
+                        key={index}
+                        style={{ display: 'flex' }} // Ensures the grid item stretches
+                    >   
                     <Card 
                         style={{ 
-                            backgroundColor: item.color, 
+                            backgroundColor: item.color,
                             color: 'white',
-                            width: '100%',
                             textAlign: 'center',
-                            
+                            padding: '5px',
+                            borderRadius: '8px',
+                            marginRight: '10px',
+                            marginTop: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            // height: '100%',
+                            flex: 1, // Ensures the card stretches
                             }}>
                             <CardContent>
-                                <Typography variant="h5">{item.label}</Typography>
-                                <Typography variant="h3">{item.value}</Typography>
+                                <Typography variant="h6">{item.label}</Typography>
+                                <Typography variant="h4">{item.value}</Typography>
                             </CardContent>
                         </Card>
-                    </Grid2>
+                    </Grid>
                 ))}
-            </Grid2>
+            </Grid>
 
-            {/* Incidents list SLA Chart  DASHBOARD */}
-            {/* Container */}
             <div style={{
                 display: 'flex',
                 flexWrap: 'wrap', // Allows stacking on smaller screens
@@ -177,14 +180,16 @@ const Incidents = () => {
                 marginTop: '20px',
             }}>
 
-                {/* Left Chart Block */}
+
                 <div style={{ 
                     flex: '1 1 48%', // Takes up 48% of the width on larger screens
-                    minWidth: '300px', // Ensures the chart doesn't shrink too much
+                    minWidth: '150px', // Ensures the chart doesn't shrink too much
                     padding: '20px',
-                    border: '1px solid #ccc',
+                    // border: '1px solid #ccc',
                     borderRadius: '8px',
                     boxSizing: 'border-box',
+                    marginRight: '10px',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                 }}>
 
                     <Typography variant="h5" gutterBottom>
@@ -192,21 +197,22 @@ const Incidents = () => {
                     </Typography>
                         
                     <div style={{ 
-                            height: '400px', 
+                            height: '260px', 
                             width: '100%', 
                     }}>
                     <Bar data={chartData} options={chartOptions} />
                     </div>
                 </div>
 
-                {/* Right Chart Block */}
                 <div style={{ 
                     flex: '1 1 48%', // Takes up 48% of the width on larger screens
-                    minWidth: '300px', // Ensures the chart doesn't shrink too much
+                    minWidth: '150px', // Ensures the chart doesn't shrink too much
                     padding: '20px',
-                    border: '1px solid #ccc',
+                    // border: '1px solid #ccc',
                     borderRadius: '8px',
                     boxSizing: 'border-box',
+                    marginRight: '10px',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                 }}>
 
                     <Typography variant="h5" gutterBottom>
@@ -214,7 +220,7 @@ const Incidents = () => {
                     </Typography>
                             
                     <div style={{ 
-                        height: '400px', 
+                        height: '260px', 
                         width: '100%' 
                     }}>
                     <Bar data={chartData} options={chartOptions} />
@@ -222,6 +228,7 @@ const Incidents = () => {
                 </div>
 
             </div>   
+        
         </div>
     );
 };

@@ -30,6 +30,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Dashboard from './Dashboard';
 import Incidents from './Incidents';
+import Problem from './Problem';
 
 const App = () => {
     return (
@@ -40,7 +41,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/incidents" element={<Incidents />} />
-              <Route path="/problems" element={<h2>Problem Management</h2>} />
+              <Route path="/problems" element={<Problem />} />
               <Route path="/changes" element={<h2>Change Request</h2>} />
             </Routes>
           </div>
