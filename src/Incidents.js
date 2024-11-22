@@ -136,6 +136,7 @@ const Incidents = () => {
                 style={{ 
                     width: '100%', 
                     margin: '0 auto', // Centers the grid container
+                    marginBottom: '20px',
                 }}
                 >
                 {dashboardItems.map((item, index) => (
@@ -170,7 +171,7 @@ const Incidents = () => {
                 ))}
             </Grid>
 
-            <div style={{
+            {/* <div style={{  // start of chart container
                 display: 'flex',
                 flexWrap: 'wrap', // Allows stacking on smaller screens
                 gap: '10px', // Adds spacing between charts
@@ -178,10 +179,11 @@ const Incidents = () => {
                 alignItems: 'stretch', // Ensures charts have equal height
                 width: '100%', // Ensures the container spans the full width
                 marginTop: '20px',
+                marginBottom: '20px',
             }}>
 
 
-                <div style={{ 
+                <div style={{   // 1st left container style
                     flex: '1 1 48%', // Takes up 48% of the width on larger screens
                     minWidth: '150px', // Ensures the chart doesn't shrink too much
                     padding: '20px',
@@ -204,7 +206,7 @@ const Incidents = () => {
                     </div>
                 </div>
 
-                <div style={{ 
+                <div style={{  // 2nd right container style
                     flex: '1 1 48%', // Takes up 48% of the width on larger screens
                     minWidth: '150px', // Ensures the chart doesn't shrink too much
                     padding: '20px',
@@ -227,11 +229,12 @@ const Incidents = () => {
                     </div>
                 </div>
 
-            </div>   
+            </div>    */}
+            
 
-            <Grid container spacing={2}>
-                {/* Chart Section */}
-                <Grid item xs={12} sm={6}>
+            <Grid container spacing={2}> 
+
+                <Grid item xs={12} sm={12} md={6}>
                     <div
                         style={{
                             padding: '20px',
@@ -242,7 +245,7 @@ const Incidents = () => {
                         }}
                     >
                         <Typography variant="h5" gutterBottom>
-                            3
+                            1
                         </Typography>
                         <div style={{ height: '260px', width: '100%' }}>
                             <Bar data={chartData} options={chartOptions} />
@@ -250,8 +253,7 @@ const Incidents = () => {
                     </div>
                 </Grid>
 
-                {/* Incidents Section */}
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={12} md={6}> 
                     <div
                         style={{
                             padding: '20px',
@@ -262,39 +264,190 @@ const Incidents = () => {
                         }}
                     >
                         <Typography variant="h5" gutterBottom>
-                            Incidents
+                            2
                         </Typography>
-                    </div>
-                    <div
-                        style={{
-                            padding: '20px',
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                            marginRight: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom>
-                            Incidents
-                        </Typography>
-                    </div>
-                    <div
-                        style={{
-                            padding: '20px',
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                            marginRight: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom>
-                            Incidents
-                        </Typography>
+                        <div style={{ height: '260px', width: '100%' }}>
+                            <Bar data={chartData} options={chartOptions} />
+                        </div>
                     </div>
                 </Grid>
 
+
+                {/* <Grid item xs={12} sm={6}>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '90px',
+                            marginBottom: '10px',
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents 1
+                        </Typography>
+                    </div>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '90px',
+                            marginBottom: '10px',
+
+
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents 2
+                        </Typography>
+                    </div>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '90px',
+                            marginBottom: '10px',
+
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents 3
+                        </Typography>
+                    </div>
+                </Grid> */}
+
                 
             </Grid>
+
+            <Grid container spacing={2}> 
+
+                <Grid item xs={12} sm={12} md={6}>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            3 
+                        </Typography>
+                        <div style={{ height: '260px', width: '100%' }}>
+                            <Bar data={chartData} options={chartOptions} />
+                        </div>
+                    </div>
+                </Grid>
+
+                <Grid item xs={12} sm={12} md={6}> 
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '110px',
+                            marginBottom: '5px',
+                        }}
+                    >
+                                    Incidents
+                
+                    </div>
+
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '110px',
+                            marginBottom: '5px',
+                        }}
+                    >
+                                    Incidents
+                    </div>
+
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '110px',
+                        }}
+                    >
+                                    Incidents
+                    </div>
+            </Grid>
+
+
+                {/* <Grid item xs={12} sm={6}>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '90px',
+                            marginBottom: '10px',
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents 1
+                        </Typography>
+                    </div>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '90px',
+                            marginBottom: '10px',
+
+
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents 2
+                        </Typography>
+                    </div>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            height: '90px',
+                            marginBottom: '10px',
+
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents 3
+                        </Typography>
+                    </div>
+                </Grid> */}
+
+                
+            </Grid>
+
+            
 
 
             {/* <div
@@ -351,6 +504,8 @@ const Incidents = () => {
                 </div>
             
             </div> */}
+
+            
                     
                     
         
