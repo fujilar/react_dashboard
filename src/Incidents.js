@@ -216,7 +216,7 @@ const Incidents = () => {
                 }}>
 
                     <Typography variant="h5" gutterBottom>
-                        Another Chart
+                        2
                     </Typography>
                             
                     <div style={{ 
@@ -228,8 +228,133 @@ const Incidents = () => {
                 </div>
 
             </div>   
+
+            <Grid container spacing={2}>
+                {/* Chart Section */}
+                <Grid item xs={12} sm={6}>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            3
+                        </Typography>
+                        <div style={{ height: '260px', width: '100%' }}>
+                            <Bar data={chartData} options={chartOptions} />
+                        </div>
+                    </div>
+                </Grid>
+
+                {/* Incidents Section */}
+                <Grid item xs={12} sm={6}>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents
+                        </Typography>
+                    </div>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents
+                        </Typography>
+                    </div>
+                    <div
+                        style={{
+                            padding: '20px',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            marginRight: '10px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        }}
+                    >
+                        <Typography variant="h5" gutterBottom>
+                            Incidents
+                        </Typography>
+                    </div>
+                </Grid>
+
+                
+            </Grid>
+
+
+            {/* <div
+                style={{
+                    display: 'flex', // Enables side-by-side layout
+                    gap: '20px', // Adds spacing between the chart and cards
+                    alignItems: 'flex-start', // Aligns items at the top
+                    marginTop: '20px',
+                    width: '100%',
+                    // display: 'flex', // Enables layout
+                    // flexDirection: 'column', // Stack items vertically
+                    // gap: '20px', // Adds spacing between items
+                    // width: '100%',
+                    // marginTop: '20px',
+                }}>
+
+                <div
+                    style={{ // 2 row container left //
+                        flex: '1 1 48%', // Takes up 48% of the width on larger screens
+                        minWidth: '150px', // Ensures the chart doesn't shrink too much
+                        padding: '20px',
+                        // border: '1px solid #ccc',
+                        borderRadius: '8px',
+                        boxSizing: 'border-box',
+                        marginRight: '10px',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                    }}>
+
+                    <Typography variant="h5" gutterBottom>
+                        3
+                    </Typography>
+
+                    <div style={{ height: '260px', width: '100%' }}>
+                        <Bar data={chartData} options={chartOptions} />
+                    </div>
+                    
+                </div>
+
+                <div
+                    style={{
+                        flex: '1 1 48%', // Takes up 48% of the width on larger screens
+                        minWidth: '150px', // Ensures the chart doesn't shrink too much
+                        padding: '20px',
+                        // border: '1px solid #ccc',
+                        borderRadius: '8px',
+                        boxSizing: 'border-box',
+                        marginRight: '10px',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                    }}
+                    >
+                    <Typography variant="h5" gutterBottom>
+                        Incidents
+                    </Typography>    
+                </div>
+            
+            </div> */}
+                    
+                    
         
-        </div>
+    </div>
     );
 };
 

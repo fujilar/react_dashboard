@@ -116,6 +116,29 @@ const chartOptions = {
                         <Bar data={chartData} options={chartOptions} />
                     </div>
                 </div>
+
+                {/* Chart Block 3 */}
+                <div
+                    style={{
+                        flex: '1 1 48%', // Takes up 48% of the width on larger screens
+                        minWidth: '300px', // Ensures the chart doesn't shrink too much
+                        padding: '20px',
+                        border: '1px solid #ccc',
+                        borderRadius: '8px',
+                        boxSizing: 'border-box',
+                    }}
+                >
+                    <Typography variant="h5" gutterBottom>
+                        3
+                    </Typography>
+
+                    <div style={{ 
+                        height: '300px', 
+                        width: '100%' 
+                        }}>
+                        <Bar data={chartData} options={chartOptions} />
+                    </div>
+                </div>
                 
             </div>
         );
