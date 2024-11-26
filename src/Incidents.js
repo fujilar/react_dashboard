@@ -30,8 +30,17 @@ import {
     Legend,
 } from 'chart.js';
 
+// Icons for the dashboard items
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import InboxIcon from '@mui/icons-material/Inbox';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+import PauseCircleFilledIcon from '@mui/icons-material/PauseCircleFilled';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+
 // Register required Chart.js components
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+
 
 // Sample data for incidents (this can later be fetched from an API)
 const sampleIncidents = [
@@ -133,12 +142,12 @@ const Incidents = () => {
 
     // Assigned colour for different incident statuses
     const dashboardItems = [
-        { label: 'Total Incidents', value: filteredIncidents.length, color: '#2196f3' },
-        { label: 'Open Incidents', value: filteredIncidents.filter(incident => incident.status === 'Open').length, color: '#f44336' },
-        { label: 'In Progress', value: filteredIncidents.filter(incident => incident.status === 'In Progress').length, color: '#ff9800' },
-        { label: 'On Hold', value: filteredIncidents.filter(incident => incident.status === 'On Hold').length, color: '#9c27b0' },
-        { label: 'Resolved', value: filteredIncidents.filter(incident => incident.status === 'Resolved').length, color: '#4caf50' },
-        { label: 'Closed', value: filteredIncidents.filter(incident => incident.status === 'Closed').length, color: '#607d8b' },
+        { label: 'Total', value: filteredIncidents.length, color: '#2196f3', icon: <AssignmentIcon /> },
+        { label: 'Open', value: filteredIncidents.filter(incident => incident.status === 'Open').length, color: '#f44336', icon: <InboxIcon /> },
+        { label: 'In Progress', value: filteredIncidents.filter(incident => incident.status === 'In Progress').length, color: '#ff9800', icon: <AutorenewIcon /> },
+        { label: 'On Hold', value: filteredIncidents.filter(incident => incident.status === 'On Hold').length, color: '#9c27b0', icon: <PauseCircleFilledIcon /> },
+        { label: 'Resolved', value: filteredIncidents.filter(incident => incident.status === 'Resolved').length, color: '#4caf50', icon: <CheckCircleIcon /> },
+        { label: 'Closed', value: filteredIncidents.filter(incident => incident.status === 'Closed').length, color: '#607d8b', icon: <DoneAllIcon /> },
     ];
 
     // Chart Data Preparation
@@ -244,11 +253,11 @@ const Incidents = () => {
                     >   
                     <Card 
                         style={{ 
-                            background: `linear-gradient(to bottom right, ${item.color}, ${item.color}99)`, // Add subtle tint with transparency
+                            background: `linear-gradient(to bottom right, ${item.color}, ${item.color}80)`, // Add subtle tint with transparency
                             color: 'white',
-                            textAlign: 'center',
+                            // textAlign: 'center',
                             position: 'relative', // Required for absolute positioning
-                            padding: '15px',
+                            // padding: '1px',
                             borderRadius: '8px',
                             // marginRight: '10px',
                             // marginTop: '10px',
@@ -258,10 +267,10 @@ const Incidents = () => {
                             }}>
                             <CardContent>
                                 <Typography
-                                    variant="h5"
+                                    variant="h7"
                                     sx={{
-                                        marginLeft: '10px', // Adjusts the indentation to the left
-                                        textAlign: 'left',  // Ensures alignment to the left
+                                        // marginLeft: '1px', // Adjusts the indentation to the left
+                                        // textAlign: 'left',  // Ensures alignment to the left
                                         fontWeight: 'bold', // Optional: Makes the text bold
                                     }}
                                 >
@@ -270,14 +279,29 @@ const Incidents = () => {
                                 <Typography
                                     variant="h4"
                                     sx={{
-                                        marginRight: '10px', // Adds indentation to the right
+                                        // marginRight: '10px', // Adds indentation to the right
                                         textAlign: 'right',  // Ensures alignment to the right
                                         fontWeight: 'bold',  // Makes the text bold
-                                        fontSize: '2rem',    // Increases the font size (adjust as needed)
+                                        // fontSize: '2rem',    // Increases the font size (adjust as needed)
+
                                     }}
                                 >
                                     {item.value}
                                 </Typography>
+                                {/* Icon */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        // bottom: '10px',
+                                        top: '42px',
+                                        left: '15px',
+                                        fontSize: '1.8rem'
+                                        // opacity: 0.7
+                                        ,
+                                    }}
+                                >
+                                    {item.icon}
+                                </div>
                             </CardContent>
                         </Card>
                     </Grid>
@@ -358,9 +382,10 @@ const Incidents = () => {
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             height: '106px',
                             marginBottom: '10px',
+                            fontWeight: 'bold',
                         }}
                     >
-                    Incidents 1
+                    Incidents Open for more than 30 days
                     </div>
 
                     <div
@@ -372,9 +397,10 @@ const Incidents = () => {
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             height: '106px',
                             marginBottom: '10px',
+                            fontWeight: 'bold'
                         }}
                     >
-                    Incidents 2
+                    Incidents not updated for 7 days
                     </div>
 
                     <div
@@ -382,14 +408,39 @@ const Incidents = () => {
                             padding: '20px',
                             borderRadius: '8px',
                             boxSizing: 'border-box',
-                            // marginRight: '10px',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             height: '106px',
                             marginBottom: '10px',
+                            fontWeight: 'bold',
+                            display: 'flex', // Flexbox for alignment
+                            alignItems: 'center', // Vertical alignment
                         }}
                     >
-                    Incidents 3
+
+                        {/* Text Section */}
+                        <div style={{ flex: 1 }}> {/* Flex grows this section */}
+                            <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>Unassigned Incidents</div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '8px' }}>3</div>
+                        </div>
+                        {/* Arrow Icon */}
+                        <div
+                            style={{
+                                width: '40px', // Set size for the circular icon
+                                height: '40px',
+                                backgroundColor: '#f5f5f5', // Background color for the circular icon
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '50%', // Circular shape
+                                marginRight: '10px', // Indentation on the left
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', // Optional: Add shadow for depth
+                            }}
+                        >
+                            <ArrowDownward style={{ color: '#000' }} /> {/* Icon */}
+                        </div>
                     </div>
+
+
                 </Grid> 
             </Grid>
                     
