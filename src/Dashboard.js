@@ -12,6 +12,7 @@ import {
     TextField,
     Divider,
     IconButton,
+    Grid,
 } from "@mui/material";
 import { ArrowUpward, ArrowDownward } from "@mui/icons-material";
 import { Bar } from 'react-chartjs-2';
@@ -377,6 +378,165 @@ const sampleData = [
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
                 </Paper>
+
+                <Grid container spacing={2} sx={{ padding: '20px' }}>
+                {/* Title */}
+                <Grid item xs={12}>
+                    <Typography variant="h5" gutterBottom>
+                    Data Table with Sorting and Search
+                    </Typography>
+                </Grid>
+
+                {/* Search Bar */}
+                <Grid item xs={12}>
+                    <TextField
+                    label="Search"
+                    variant="outlined"
+                    value={searchText}
+                    onChange={handleSearch}
+                    fullWidth
+                    sx={{ marginBottom: '20px' }}
+                    />
+                </Grid>
+
+                {/* Table */}
+                <Grid item xs={12}>
+                    <Paper sx={{ width: '100%', overflow: 'hidden', padding: '20px' }}>
+                    <TableContainer>
+                        <Table stickyHeader>
+                        <TableHead>
+                            <TableRow>
+                            <TableCell>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                Number
+                                <IconButton onClick={() => handleSort('number')} size="small">
+                                    {sortConfig.key === 'number' ? (
+                                    sortConfig.direction === 'asc' ? (
+                                        <ArrowUpward fontSize="small" />
+                                    ) : (
+                                        <ArrowDownward fontSize="small" />
+                                    )
+                                    ) : (
+                                    <ArrowUpward fontSize="small" style={{ opacity: 0.5 }} />
+                                    )}
+                                </IconButton>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                Opened
+                                <IconButton onClick={() => handleSort('opened')} size="small">
+                                    {sortConfig.key === 'opened' ? (
+                                    sortConfig.direction === 'asc' ? (
+                                        <ArrowUpward fontSize="small" />
+                                    ) : (
+                                        <ArrowDownward fontSize="small" />
+                                    )
+                                    ) : (
+                                    <ArrowUpward fontSize="small" style={{ opacity: 0.5 }} />
+                                    )}
+                                </IconButton>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                Short Description
+                                <IconButton onClick={() => handleSort('shortDescription')} size="small">
+                                    {sortConfig.key === 'shortDescription' ? (
+                                    sortConfig.direction === 'asc' ? (
+                                        <ArrowUpward fontSize="small" />
+                                    ) : (
+                                        <ArrowDownward fontSize="small" />
+                                    )
+                                    ) : (
+                                    <ArrowUpward fontSize="small" style={{ opacity: 0.5 }} />
+                                    )}
+                                </IconButton>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                Priority
+                                <IconButton onClick={() => handleSort('priority')} size="small">
+                                    {sortConfig.key === 'priority' ? (
+                                    sortConfig.direction === 'asc' ? (
+                                        <ArrowUpward fontSize="small" />
+                                    ) : (
+                                        <ArrowDownward fontSize="small" />
+                                    )
+                                    ) : (
+                                    <ArrowUpward fontSize="small" style={{ opacity: 0.5 }} />
+                                    )}
+                                </IconButton>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                State
+                                <IconButton onClick={() => handleSort('state')} size="small">
+                                    {sortConfig.key === 'state' ? (
+                                    sortConfig.direction === 'asc' ? (
+                                        <ArrowUpward fontSize="small" />
+                                    ) : (
+                                        <ArrowDownward fontSize="small" />
+                                    )
+                                    ) : (
+                                    <ArrowUpward fontSize="small" style={{ opacity: 0.5 }} />
+                                    )}
+                                </IconButton>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                Category
+                                <IconButton onClick={() => handleSort('category')} size="small">
+                                    {sortConfig.key === 'category' ? (
+                                    sortConfig.direction === 'asc' ? (
+                                        <ArrowUpward fontSize="small" />
+                                    ) : (
+                                        <ArrowDownward fontSize="small" />
+                                    )
+                                    ) : (
+                                    <ArrowUpward fontSize="small" style={{ opacity: 0.5 }} />
+                                    )}
+                                </IconButton>
+                                </div>
+                            </TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {filteredRows
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((row) => (
+                                <TableRow key={row.number}>
+                                <TableCell>{row.number}</TableCell>
+                                <TableCell>{row.opened}</TableCell>
+                                <TableCell>{row.shortDescription}</TableCell>
+                                <TableCell>{row.priority}</TableCell>
+                                <TableCell>{row.state}</TableCell>
+                                <TableCell>{row.category}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                        </Table>
+                    </TableContainer>
+                    </Paper>
+                </Grid>
+
+                {/* Pagination */}
+                <Grid item xs={12}>
+                    <TablePagination
+                    rowsPerPageOptions={[5, 10, 15]}
+                    component="div"
+                    count={filteredRows.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    />
+                </Grid>
+                </Grid>
+
                 
             </div>
             

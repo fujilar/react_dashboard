@@ -1,5 +1,25 @@
 import React, { useState } from 'react';
-import { Grid, Grid2, Card, CardContent, Typography, Button, ButtonGroup } from '@mui/material';
+import {    
+        Grid, 
+        Grid2, 
+        Card, 
+        CardContent, 
+        Typography, 
+        Button, 
+        ButtonGroup,
+        Table,
+        TableBody,
+        TableCell,
+        TableContainer,
+        TableHead,
+        TableRow,
+        Paper,
+        TablePagination,
+        TextField,
+        Divider,
+        IconButton,
+} from '@mui/material';
+import { ArrowUpward, ArrowDownward } from "@mui/icons-material";
 import { Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -74,10 +94,44 @@ const chartOptions = {
     },
 };
 
+// Incident sample data
+const sampleData = [
+    { number: 1, opened: "2024-11-14", shortDescription: "Issue A", priority: "High", state: "Open", category: "Bug" },
+    { number: 2, opened: "2024-11-13", shortDescription: "Issue B", priority: "Medium", state: "In Progress", category: "Feature" },
+    { number: 3, opened: "2024-11-12", shortDescription: "Issue C", priority: "Low", state: "Resolved", category: "Enhancement" },
+    { number: 4, opened: "2024-11-11", shortDescription: "Issue D", priority: "High", state: "Closed", category: "Bug" },
+    { number: 5, opened: "2024-11-10", shortDescription: "Issue E", priority: "Low", state: "Open", category: "Maintenance" },
+    { number: 6, opened: "2024-11-09", shortDescription: "Issue F", priority: "Medium", state: "In Progress", category: "Bug" },
+    { number: 7, opened: "2024-11-08", shortDescription: "Issue G", priority: "High", state: "Closed", category: "Feature" },
+    { number: 8, opened: "2024-11-07", shortDescription: "Issue H", priority: "Low", state: "Resolved", category: "Enhancement" },
+    { number: 9, opened: "2024-11-06", shortDescription: "Issue I", priority: "Medium", state: "Open", category: "Bug" },
+    { number: 10, opened: "2024-11-05", shortDescription: "Issue J", priority: "High", state: "In Progress", category: "Feature" },
+    { number: 11, opened: "2024-11-04", shortDescription: "Issue K", priority: "Low", state: "Resolved", category: "Bug" },
+    { number: 12, opened: "2024-11-03", shortDescription: "Issue L", priority: "Medium", state: "Closed", category: "Enhancement" },
+    { number: 13, opened: "2024-11-02", shortDescription: "Issue M", priority: "High", state: "Open", category: "Feature" },
+    { number: 14, opened: "2024-11-01", shortDescription: "Issue N", priority: "Low", state: "In Progress", category: "Bug" },
+    { number: 15, opened: "2024-10-31", shortDescription: "Issue O", priority: "Medium", state: "Closed", category: "Feature" },
+    { number: 16, opened: "2024-10-30", shortDescription: "Issue P", priority: "High", state: "Resolved", category: "Enhancement" },
+    { number: 17, opened: "2024-10-29", shortDescription: "Issue Q", priority: "Low", state: "Open", category: "Bug" },
+    { number: 18, opened: "2024-10-28", shortDescription: "Issue R", priority: "Medium", state: "In Progress", category: "Feature" },
+    { number: 19, opened: "2024-10-27", shortDescription: "Issue S", priority: "High", state: "Closed", category: "Enhancement" },
+    { number: 20, opened: "2024-10-26", shortDescription: "Issue T", priority: "Low", state: "Resolved", category: "Bug" },
+];
+
 const Incidents = () => {
+    // filter incidents state
     const [filter, setFilter] = useState('All');
     const filteredIncidents = filterIncidents(sampleIncidents, filter);
 
+    // data table state
+    const [rows, setRows] = useState(sampleData); // Full data
+    const [filteredRows, setFilteredRows] = useState(sampleData); // Filtered data
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [searchText, setSearchText] = useState("");
+    const [sortConfig, setSortConfig] = useState({ key: "number", direction: "asc" });
+
+    // Assigned colour for different incident statuses
     const dashboardItems = [
         { label: 'Total Incidents', value: filteredIncidents.length, color: '#2196f3' },
         { label: 'Open Incidents', value: filteredIncidents.filter(incident => incident.status === 'Open').length, color: '#f44336' },
@@ -102,6 +156,45 @@ const Incidents = () => {
                 backgroundColor: ['#4caf50', '#f44336'],
             },
         ],
+    };
+
+    // Data Table 
+    // Sorting Functionality
+    const handleSort = (key) => {
+        const direction = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
+        setSortConfig({ key, direction });
+
+        const sortedData = [...filteredRows].sort((a, b) => {
+            if (a[key] < b[key]) return direction === "asc" ? -1 : 1;
+            if (a[key] > b[key]) return direction === "asc" ? 1 : -1;
+            return 0;
+        });
+    
+        setFilteredRows(sortedData);
+    };
+
+    // Handle Pagination
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
+    // Handle Search
+    const handleSearch = (e) => {
+        const value = e.target.value.toLowerCase(); // Normalize search term to lowercase
+        setSearchText(value);
+
+        const filtered = rows.filter((row) =>
+            Object.values(row).some((field) =>
+                field.toString().toLowerCase().includes(value) // Normalize fields to lowercase and check for inclusion
+            )
+        );
+
+        setFilteredRows(filtered);
     };
     
 
@@ -132,11 +225,11 @@ const Incidents = () => {
 
             <Grid
                 container 
-                // spacing={3}
+                spacing={1}
                 style={{ 
-                    width: '100%', 
-                    margin: '0 auto', // Centers the grid container
-                    marginBottom: '20px',
+                    // width: '100%', 
+                    // margin: '0 auto', // Centers the grid container
+                    marginBottom: '10px',
                 }}
                 >
                 {dashboardItems.map((item, index) => (
@@ -151,88 +244,47 @@ const Incidents = () => {
                     >   
                     <Card 
                         style={{ 
-                            backgroundColor: item.color,
+                            background: `linear-gradient(to bottom right, ${item.color}, ${item.color}99)`, // Add subtle tint with transparency
                             color: 'white',
                             textAlign: 'center',
-                            padding: '5px',
+                            position: 'relative', // Required for absolute positioning
+                            padding: '15px',
                             borderRadius: '8px',
-                            marginRight: '10px',
-                            marginTop: '10px',
+                            // marginRight: '10px',
+                            // marginTop: '10px',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             // height: '100%',
                             flex: 1, // Ensures the card stretches
                             }}>
                             <CardContent>
-                                <Typography variant="h6">{item.label}</Typography>
-                                <Typography variant="h4">{item.value}</Typography>
+                                <Typography
+                                    variant="h5"
+                                    sx={{
+                                        marginLeft: '10px', // Adjusts the indentation to the left
+                                        textAlign: 'left',  // Ensures alignment to the left
+                                        fontWeight: 'bold', // Optional: Makes the text bold
+                                    }}
+                                >
+                                    {item.label}
+                                </Typography>
+                                <Typography
+                                    variant="h4"
+                                    sx={{
+                                        marginRight: '10px', // Adds indentation to the right
+                                        textAlign: 'right',  // Ensures alignment to the right
+                                        fontWeight: 'bold',  // Makes the text bold
+                                        fontSize: '2rem',    // Increases the font size (adjust as needed)
+                                    }}
+                                >
+                                    {item.value}
+                                </Typography>
                             </CardContent>
                         </Card>
                     </Grid>
                 ))}
             </Grid>
 
-            {/* <div style={{  // start of chart container
-                display: 'flex',
-                flexWrap: 'wrap', // Allows stacking on smaller screens
-                gap: '10px', // Adds spacing between charts
-                justifyContent: 'space-between', // Aligns items evenly
-                alignItems: 'stretch', // Ensures charts have equal height
-                width: '100%', // Ensures the container spans the full width
-                marginTop: '20px',
-                marginBottom: '20px',
-            }}>
-
-
-                <div style={{   // 1st left container style
-                    flex: '1 1 48%', // Takes up 48% of the width on larger screens
-                    minWidth: '150px', // Ensures the chart doesn't shrink too much
-                    padding: '20px',
-                    // border: '1px solid #ccc',
-                    borderRadius: '8px',
-                    boxSizing: 'border-box',
-                    marginRight: '10px',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                }}>
-
-                    <Typography variant="h5" gutterBottom>
-                        Incidents SLA Performance
-                    </Typography>
-                        
-                    <div style={{ 
-                            height: '260px', 
-                            width: '100%', 
-                    }}>
-                    <Bar data={chartData} options={chartOptions} />
-                    </div>
-                </div>
-
-                <div style={{  // 2nd right container style
-                    flex: '1 1 48%', // Takes up 48% of the width on larger screens
-                    minWidth: '150px', // Ensures the chart doesn't shrink too much
-                    padding: '20px',
-                    // border: '1px solid #ccc',
-                    borderRadius: '8px',
-                    boxSizing: 'border-box',
-                    marginRight: '10px',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                }}>
-
-                    <Typography variant="h5" gutterBottom>
-                        2
-                    </Typography>
-                            
-                    <div style={{ 
-                        height: '260px', 
-                        width: '100%' 
-                    }}>
-                    <Bar data={chartData} options={chartOptions} />
-                    </div>
-                </div>
-
-            </div>    */}
-            
-
-            <Grid container spacing={2}> 
+            <Grid container spacing={1}> 
 
                 <Grid item xs={12} sm={12} md={6}>
                     <div
@@ -240,8 +292,9 @@ const Incidents = () => {
                             padding: '20px',
                             borderRadius: '8px',
                             boxSizing: 'border-box',
-                            marginRight: '10px',
+                            // marginRight: '10px',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            marginBottom: '10px',
                         }}
                     >
                         <Typography variant="h5" gutterBottom>
@@ -259,8 +312,9 @@ const Incidents = () => {
                             padding: '20px',
                             borderRadius: '8px',
                             boxSizing: 'border-box',
-                            marginRight: '10px',
+                            // marginRight: '10px',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            marginBottom: '10px',
                         }}
                     >
                         <Typography variant="h5" gutterBottom>
@@ -270,73 +324,19 @@ const Incidents = () => {
                             <Bar data={chartData} options={chartOptions} />
                         </div>
                     </div>
-                </Grid>
-
-
-                {/* <Grid item xs={12} sm={6}>
-                    <div
-                        style={{
-                            padding: '20px',
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                            marginRight: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '90px',
-                            marginBottom: '10px',
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom>
-                            Incidents 1
-                        </Typography>
-                    </div>
-                    <div
-                        style={{
-                            padding: '20px',
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                            marginRight: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '90px',
-                            marginBottom: '10px',
-
-
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom>
-                            Incidents 2
-                        </Typography>
-                    </div>
-                    <div
-                        style={{
-                            padding: '20px',
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                            marginRight: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '90px',
-                            marginBottom: '10px',
-
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom>
-                            Incidents 3
-                        </Typography>
-                    </div>
-                </Grid> */}
-
-                
+                </Grid>        
             </Grid>
 
-            <Grid container spacing={2}> 
-
+            <Grid container spacing={1}> 
                 <Grid item xs={12} sm={12} md={6}>
                     <div
                         style={{
                             padding: '20px',
                             borderRadius: '8px',
                             boxSizing: 'border-box',
-                            marginRight: '10px',
+                            // marginRight: '10px',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            marginBottom: '10px',
                         }}
                     >
                         <Typography variant="h5" gutterBottom>
@@ -354,14 +354,13 @@ const Incidents = () => {
                             padding: '20px',
                             borderRadius: '8px',
                             boxSizing: 'border-box',
-                            marginRight: '10px',
+                            // marginRight: '10px',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '110px',
-                            marginBottom: '5px',
+                            height: '106px',
+                            marginBottom: '10px',
                         }}
                     >
-                                    Incidents
-                
+                    Incidents 1
                     </div>
 
                     <div
@@ -369,13 +368,13 @@ const Incidents = () => {
                             padding: '20px',
                             borderRadius: '8px',
                             boxSizing: 'border-box',
-                            marginRight: '10px',
+                            // marginRight: '10px',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '110px',
-                            marginBottom: '5px',
+                            height: '106px',
+                            marginBottom: '10px',
                         }}
                     >
-                                    Incidents
+                    Incidents 2
                     </div>
 
                     <div
@@ -383,132 +382,107 @@ const Incidents = () => {
                             padding: '20px',
                             borderRadius: '8px',
                             boxSizing: 'border-box',
-                            marginRight: '10px',
+                            // marginRight: '10px',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '110px',
+                            height: '106px',
+                            marginBottom: '10px',
                         }}
                     >
-                                    Incidents
+                    Incidents 3
                     </div>
+                </Grid> 
             </Grid>
-
-
-                {/* <Grid item xs={12} sm={6}>
-                    <div
-                        style={{
-                            padding: '20px',
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                            marginRight: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '90px',
-                            marginBottom: '10px',
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom>
-                            Incidents 1
-                        </Typography>
-                    </div>
-                    <div
-                        style={{
-                            padding: '20px',
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                            marginRight: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '90px',
-                            marginBottom: '10px',
-
-
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom>
-                            Incidents 2
-                        </Typography>
-                    </div>
-                    <div
-                        style={{
-                            padding: '20px',
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                            marginRight: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            height: '90px',
-                            marginBottom: '10px',
-
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom>
-                            Incidents 3
-                        </Typography>
-                    </div>
-                </Grid> */}
-
-                
-            </Grid>
-
-            
-
-
-            {/* <div
-                style={{
-                    display: 'flex', // Enables side-by-side layout
-                    gap: '20px', // Adds spacing between the chart and cards
-                    alignItems: 'flex-start', // Aligns items at the top
-                    marginTop: '20px',
-                    width: '100%',
-                    // display: 'flex', // Enables layout
-                    // flexDirection: 'column', // Stack items vertically
-                    // gap: '20px', // Adds spacing between items
-                    // width: '100%',
-                    // marginTop: '20px',
-                }}>
-
-                <div
-                    style={{ // 2 row container left //
-                        flex: '1 1 48%', // Takes up 48% of the width on larger screens
-                        minWidth: '150px', // Ensures the chart doesn't shrink too much
-                        padding: '20px',
-                        // border: '1px solid #ccc',
-                        borderRadius: '8px',
-                        boxSizing: 'border-box',
-                        marginRight: '10px',
-                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                    }}>
-
-                    <Typography variant="h5" gutterBottom>
-                        3
-                    </Typography>
-
-                    <div style={{ height: '260px', width: '100%' }}>
-                        <Bar data={chartData} options={chartOptions} />
-                    </div>
                     
-                </div>
+            <Grid container spacing={2}>
 
-                <div
-                    style={{
-                        flex: '1 1 48%', // Takes up 48% of the width on larger screens
-                        minWidth: '150px', // Ensures the chart doesn't shrink too much
+                {/* Table Section */}
+                <Grid item xs={12} md={12}>
+                    <Paper
+                    sx={{
                         padding: '20px',
-                        // border: '1px solid #ccc',
                         borderRadius: '8px',
-                        boxSizing: 'border-box',
-                        marginRight: '10px',
-                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        boxShadow: 3,
+                        marginBottom: '20px', // Consistent spacing
                     }}
                     >
+                    {/* Table Title */}
                     <Typography variant="h5" gutterBottom>
-                        Incidents
-                    </Typography>    
-                </div>
-            
-            </div> */}
+                        Data Table with Sorting and Search
+                    </Typography>
 
-            
-                    
-                    
-        
+                    {/* Search Bar */}
+                    <TextField
+                        label="Search"
+                        variant="outlined"
+                        value={searchText}
+                        onChange={handleSearch}
+                        fullWidth
+                        sx={{ marginBottom: '20px' }}
+                    />
+
+                    {/* Table */}
+                    <TableContainer sx={{ maxHeight: "400px", overflow: "auto" }}>
+                        <Table stickyHeader>
+                            <TableHead>
+                            <TableRow>
+                                {[
+                                { label: "Number", key: "number" },
+                                { label: "Opened", key: "opened" },
+                                { label: "Short Description", key: "shortDescription" },
+                                { label: "Priority", key: "priority" },
+                                { label: "State", key: "state" },
+                                { label: "Category", key: "category" },
+                                ].map((column) => (
+                                <TableCell
+                                    key={column.key}
+                                    onClick={() => handleSort(column.key)}
+                                    sx={{ cursor: "pointer", userSelect: "none" }}
+                                >
+                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                    {column.label}
+                                    {sortConfig.key === column.key ? (
+                                        sortConfig.direction === "asc" ? (
+                                        <ArrowUpward fontSize="small" />
+                                        ) : (
+                                        <ArrowDownward fontSize="small" />
+                                        )
+                                    ) : null}
+                                    </div>
+                                </TableCell>
+                                ))}
+                            </TableRow>
+                            </TableHead>
+                            <TableBody>
+                            {filteredRows
+                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                .map((row) => (
+                                <TableRow key={row.number}>
+                                    <TableCell>{row.number}</TableCell>
+                                    <TableCell>{row.opened}</TableCell>
+                                    <TableCell>{row.shortDescription}</TableCell>
+                                    <TableCell>{row.priority}</TableCell>
+                                    <TableCell>{row.state}</TableCell>
+                                    <TableCell>{row.category}</TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        </TableContainer>;
+
+                    {/* Pagination */}
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 15]}
+                        component="div"
+                        count={filteredRows.length}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                    />
+                    </Paper>
+                </Grid>
+            </Grid>
+
     </div>
     );
 };
