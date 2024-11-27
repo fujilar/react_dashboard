@@ -38,6 +38,7 @@ import PauseCircleFilledIcon from '@mui/icons-material/PauseCircleFilled';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 
+import { format, subDays } from 'date-fns';
 // Register required Chart.js components
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -50,6 +51,7 @@ const sampleIncidents = [
     { id: 4, status: 'Closed', sla: 'Met', date: new Date('2024-11-08') },
     { id: 5, status: 'On Hold', sla: 'Not Met', date: new Date('2024-10-20') },
     { id: 6, status: 'Open', sla: 'Met', date: new Date('2023-12-31') },
+    { id: 7, status: 'Resolved', sla: 'Not Met', date: new Date('2024-11-27') },
 ];
 
 // Utility function to filter incidents based on the selected filter
@@ -65,6 +67,12 @@ const filterIncidents = (incidents, filter) => {
             last7Days.setDate(now.getDate() - 7);
             return incidents.filter(
                 incident => incident.date >= last7Days
+            );
+        case 'Month':
+            const lastMonth = new Date(now);
+            lastMonth.setMonth(now.getMonth() - 1);
+            return incidents.filter(
+                incident => incident.date >= lastMonth
             );
         case 'Year':
             const lastYear = new Date(now);
@@ -205,21 +213,68 @@ const Incidents = () => {
 
         setFilteredRows(filtered);
     };
+
+    // Calculate the start of the year and today's date
+    // const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+    // const today = new Date();
+
+    // Format the dates
+    // const formatDate = (date) => date.toLocaleDateString('en-US'); // Format as MM/DD/YYYY
+    // const dateRange = `${formatDate(startOfYear)} - ${formatDate(today)}`;
+
+    const today = format(new Date(), 'dd MMM yyyy'); // Format today's date
+    const yearStart = format(new Date(new Date().getFullYear(), 0, 1), 'dd MMM yyyy'); // Format start of the year
+    //monthStart
+    const monthStart = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'dd MMM yyyy'); // Format start of the month    
     
+    // Function to calculate the date range based on the filter
+    const getDateDisplay = () => {
+        switch (filter) {
+            case 'Today':
+                return format(today, 'dd MMM yyyy');
+            case '7 Days':
+                const sevenDaysAgo = subDays(today, 7);
+                return `${format(sevenDaysAgo, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
+            case 'Year':
+                return `${format(yearStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
+            case 'Month':
+                return `${format(monthStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
+                
+            default:
+                return `${format(yearStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
+        }
+    };
 
     return (
         <div style={{ padding: '20px' }}>
             
-            <Typography variant="h4" gutterBottom>
-                Incidents Page
+            <Typography variant="h6" gutterBottom>
+                Incident Management
             </Typography>
 
-            <ButtonGroup style={{ 
-                marginBottom: '20px', 
-                marginRight: '10px'
-                }}>
-                {['All', 'Today', '7 Days', 'Year'].map(label => (
-                    <Button 
+            <div
+            style={{
+                display: 'flex', // Align items in a row
+                justifyContent: 'space-between', // Space out elements
+                alignItems: 'center', // Align items vertically in the center
+                marginBottom: '10px',
+            }}
+        >
+            {/* Date Range Display */}
+            <Typography
+                variant="body2"
+                style={{
+                    color: 'grey', // Make the text less prominent
+                    fontStyle: 'italic', // Optional: Italicize for style
+                }}
+            >
+                {getDateDisplay()}
+            </Typography>
+
+            {/* Button Group */}
+            <ButtonGroup>
+                {['All', 'Today', '7 Days', 'Month', 'Custom'].map((label) => (
+                    <Button
                         key={label}
                         variant={filter === label ? 'contained' : 'outlined'}
                         onClick={() => setFilter(label)}
@@ -231,82 +286,88 @@ const Incidents = () => {
                     </Button>
                 ))}
             </ButtonGroup>
+        </div>
+
+
+            
 
             <Grid
-                container 
+                container
                 spacing={1}
-                style={{ 
-                    // width: '100%', 
-                    // margin: '0 auto', // Centers the grid container
+                style={{
                     marginBottom: '10px',
                 }}
+>
+    {dashboardItems.map((item, index) => (
+        <Grid
+            item
+            xs={12}
+            sm={6}
+            md={4}
+            lg={2}
+            key={index}
+            style={{ display: 'flex' }}
+        >
+            <Card
+                style={{
+                    display: 'flex', // Flexbox for horizontal alignment
+                    alignItems: 'center', // Align items vertically
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                    flex: 1,
+                    padding: '16px', // Add padding for inner spacing
+                }}
+            >
+                {/* Circular Icon */}
+                <div
+                    style={{
+                        width: '40px', // Width of the circular icon
+                        height: '40px', // Height of the circular icon
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%', // Makes the icon circular
+                        fontSize: '1.8rem', // Size of the icon
+                        marginRight: '16px', // Space between the icon and the text
+                        
+                        backgroundColor: item.color, // Set the color from the item
+                        color: 'white', // White icon color for contrast
+                    }}
                 >
-                {dashboardItems.map((item, index) => (
-                    <Grid
-                        item 
-                        xs={12} 
-                        sm={6} 
-                        md={4} 
-                        lg={2} 
-                        key={index}
-                        style={{ display: 'flex' }} // Ensures the grid item stretches
-                    >   
-                    <Card 
-                        style={{ 
-                            background: `linear-gradient(to bottom right, ${item.color}, ${item.color}80)`, // Add subtle tint with transparency
-                            color: 'white',
-                            // textAlign: 'center',
-                            position: 'relative', // Required for absolute positioning
-                            // padding: '1px',
-                            borderRadius: '8px',
-                            // marginRight: '10px',
-                            // marginTop: '10px',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                            // height: '100%',
-                            flex: 1, // Ensures the card stretches
-                            }}>
-                            <CardContent>
-                                <Typography
-                                    variant="h7"
-                                    sx={{
-                                        // marginLeft: '1px', // Adjusts the indentation to the left
-                                        // textAlign: 'left',  // Ensures alignment to the left
-                                        fontWeight: 'bold', // Optional: Makes the text bold
-                                    }}
-                                >
-                                    {item.label}
-                                </Typography>
-                                <Typography
-                                    variant="h4"
-                                    sx={{
-                                        // marginRight: '10px', // Adds indentation to the right
-                                        textAlign: 'right',  // Ensures alignment to the right
-                                        fontWeight: 'bold',  // Makes the text bold
-                                        // fontSize: '2rem',    // Increases the font size (adjust as needed)
+                    {item.icon}
+                </div>
 
-                                    }}
-                                >
-                                    {item.value}
-                                </Typography>
-                                {/* Icon */}
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        // bottom: '10px',
-                                        top: '42px',
-                                        left: '15px',
-                                        fontSize: '1.8rem'
-                                        // opacity: 0.7
-                                        ,
-                                    }}
-                                >
-                                    {item.icon}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                ))}
+                {/* Label and Value */}
+                <div style={{ flex: 1, textAlign: 'right', paddingRight: '10px' }}>
+                    {/* Label */}
+                    <Typography
+                        variant="h7"
+                        style={{
+                            // fontWeight: 'bold',
+                            color: 'grey', // Dim the color of the label
+                            textAlign: 'right', // Align label to the right
+                        }}
+                    >
+                        {item.label}
+                    </Typography>
+
+                    {/* Value */}
+                    <Typography
+                        variant="h4"
+                        style={{
+                            fontWeight: 'bold',
+                            marginTop: '8px',
+                            textAlign: 'right', // Align value to the right
+                        }}
+                    >
+                        {item.value}
+                    </Typography>
+                </div>
+            </Card>
+        </Grid>
+    ))}
             </Grid>
+
 
             <Grid container spacing={1}> 
 
@@ -321,8 +382,8 @@ const Incidents = () => {
                             marginBottom: '10px',
                         }}
                     >
-                        <Typography variant="h5" gutterBottom>
-                            1
+                        <Typography variant="h7" gutterBottom>
+                            SLA Breach
                         </Typography>
                         <div style={{ height: '260px', width: '100%' }}>
                             <Bar data={chartData} options={chartOptions} />
