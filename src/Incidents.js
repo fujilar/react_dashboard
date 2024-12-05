@@ -18,6 +18,9 @@ import {
         TextField,
         Divider,
         IconButton,
+        Drawer,
+        Menu,
+        MenuItem
 } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from "@mui/icons-material";
 import { Bar } from 'react-chartjs-2';
@@ -39,6 +42,11 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 
 import { format, subDays } from 'date-fns';
+
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+
 // Register required Chart.js components
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -55,35 +63,35 @@ const sampleIncidents = [
 ];
 
 // Utility function to filter incidents based on the selected filter
-const filterIncidents = (incidents, filter) => {
+const filterIncidents = (incidents, filter, fromDate, toDate) => {
     const now = new Date();
     switch (filter) {
         case 'Today':
-            return incidents.filter(
-                incident => incident.date.toDateString() === now.toDateString()
-            ); 
+            return incidents.filter(incident => incident.date.toDateString() === now.toDateString());
         case '7 Days':
             const last7Days = new Date(now);
             last7Days.setDate(now.getDate() - 7);
-            return incidents.filter(
-                incident => incident.date >= last7Days
-            );
+            return incidents.filter(incident => incident.date >= last7Days);
         case 'Month':
             const lastMonth = new Date(now);
             lastMonth.setMonth(now.getMonth() - 1);
-            return incidents.filter(
-                incident => incident.date >= lastMonth
-            );
+            return incidents.filter(incident => incident.date >= lastMonth);
         case 'Year':
             const lastYear = new Date(now);
             lastYear.setFullYear(now.getFullYear() - 1);
-            return incidents.filter(
-                incident => incident.date >= lastYear
-            );
+            return incidents.filter(incident => incident.date >= lastYear);
+        case 'Custom':
+            if (fromDate && toDate) {
+                return incidents.filter(
+                    incident => incident.date >= fromDate && incident.date <= toDate
+                );
+            }
+            return []; // No filtering if dates are not set
         default:
             return incidents;
     }
-}
+};
+
 
 // Chart options
 const chartOptions = {
@@ -138,7 +146,17 @@ const sampleData = [
 const Incidents = () => {
     // filter incidents state
     const [filter, setFilter] = useState('All');
-    const filteredIncidents = filterIncidents(sampleIncidents, filter);
+
+    const [fromDate, setFromDate] = useState(null); // State for From date
+    const [toDate, setToDate] = useState(null); // State for To date
+
+    const [tempFromDate, setTempFromDate] = useState(null); // Temporary From date
+    const [tempToDate, setTempToDate] = useState(null); // Temporary To date
+
+    const [anchorEl, setAnchorEl] = useState(null); // State for dropdown menu
+
+
+    const filteredIncidents = filterIncidents(sampleIncidents, filter, fromDate, toDate);
 
     // data table state
     const [rows, setRows] = useState(sampleData); // Full data
@@ -147,6 +165,8 @@ const Incidents = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [searchText, setSearchText] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: "number", direction: "asc" });
+
+    const [customRange, setCustomRange] = useState('Please select a date range'); // Custom date range
 
     // Assigned colour for different incident statuses
     const dashboardItems = [
@@ -222,10 +242,10 @@ const Incidents = () => {
     // const formatDate = (date) => date.toLocaleDateString('en-US'); // Format as MM/DD/YYYY
     // const dateRange = `${formatDate(startOfYear)} - ${formatDate(today)}`;
 
-    const today = format(new Date(), 'dd MMM yyyy'); // Format today's date
-    const yearStart = format(new Date(new Date().getFullYear(), 0, 1), 'dd MMM yyyy'); // Format start of the year
+    const today = new Date(); // Format today's date
+    const yearStart = new Date(new Date().getFullYear(), 0, 1); // Format start of the year
     //monthStart
-    const monthStart = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'dd MMM yyyy'); // Format start of the month    
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1); // Format start of the month    
     
     // Function to calculate the date range based on the filter
     const getDateDisplay = () => {
@@ -239,11 +259,35 @@ const Incidents = () => {
                 return `${format(yearStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
             case 'Month':
                 return `${format(monthStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
-                
+            case 'Custom':
+                return fromDate && toDate
+                    ? `${format(fromDate, 'dd MMM yyyy')} - ${format(toDate, 'dd MMM yyyy')}`
+                    : 'Please select a date range';
             default:
                 return `${format(yearStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
         }
     };
+
+    const handleDropdownOpen = (event) => {
+        setAnchorEl(event.currentTarget); // Open the dropdown
+    };
+
+    const handleDropdownClose = () => {
+        setAnchorEl(null); // Close the dropdown
+    };
+
+    const handleApplyFilter = () => {
+        if (tempFromDate && tempToDate) {
+            setFromDate(tempFromDate); // Apply the temporary date
+            setToDate(tempToDate); // Apply the temporary date
+            setCustomRange(`${tempFromDate.toLocaleDateString()} - ${tempToDate.toLocaleDateString()}`);
+            setFilter('Custom');
+        } else {
+            alert("Please select both 'From' and 'To' dates to apply the filter.");
+        }
+        setAnchorEl(null); // Close dropdown after applying filter
+    };
+    
 
     return (
         <div style={{ padding: '20px' }}>
@@ -273,10 +317,10 @@ const Incidents = () => {
 
             {/* Button Group */}
             <ButtonGroup>
-                {['All', 'Today', '7 Days', 'Month', 'Custom'].map((label) => (
+                {['All', 'Today', '7 Days', 'Month'].map((label) => (
                     <Button
                         key={label}
-                        variant={filter === label ? 'contained' : 'outlined'}
+                        variant={filter === label && filter !== 'Custom' ? 'contained' : 'outlined'}
                         onClick={() => setFilter(label)}
                         sx={{
                             fontSize: '10px', // Adjust font size here
@@ -285,7 +329,147 @@ const Incidents = () => {
                         {label}
                     </Button>
                 ))}
+
+                {/* Custom Button */}
+                <Button
+                    variant={filter === 'Custom' ? 'contained' : 'outlined'}
+                    onClick={(event) => {
+                        setFilter('Custom'); // Set filter to "Custom"
+                        handleDropdownOpen(event); // Open the dropdown
+                    }}
+                    sx={{
+                        fontSize: '10px',
+                    }}
+                >
+                    Custom
+                </Button>
+
             </ButtonGroup>
+
+            {/* Dropdown Menu for Custom Date */}
+            <Menu
+    anchorEl={anchorEl}
+    open={Boolean(anchorEl)}
+    onClose={handleDropdownClose}
+    keepMounted
+    disablePortal={false}
+    anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'right', // Align to the right edge of the button
+    }}
+    transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right', // Align the top-right corner of the menu with the button
+    }}
+    MenuListProps={{
+        style: { padding: '10px', width: '250px' },
+    }}
+    PopperProps={{
+        modifiers: [
+            {
+                name: 'preventOverflow',
+                options: {
+                    boundary: 'window',
+                },
+            },
+            {
+                name: 'offset',
+                options: {
+                    offset: [0, 10], // Add a vertical margin of 10px
+                },
+            },
+            {
+                name: 'computeStyles',
+                options: {
+                    adaptive: true, // Ensures the menu repositions on window resize
+                    gpuAcceleration: true, // Smooth animations
+                },
+            },
+        ],
+    }}
+>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+        {/* From Date Picker */}
+        <MenuItem
+            disableRipple
+            sx={{
+                "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
+            }}
+        >
+            <DatePicker
+                label="From"
+                value={tempFromDate}
+                onChange={(newValue) => setTempFromDate(newValue)} // Update tempFromDate
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        size="small"
+                        fullWidth
+                        sx={{
+                            marginBottom: '10px',
+                        }}
+                    />
+                )}
+            />
+        </MenuItem>
+
+        {/* To Date Picker */}
+        <MenuItem
+            disableRipple
+            sx={{
+                "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
+            }}
+        >
+            <DatePicker
+                label="To"
+                value={tempToDate}
+                onChange={(newValue) => setTempToDate(newValue)} // Update tempToDate
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        size="small"
+                        fullWidth
+                        sx={{
+                            marginBottom: '10px',
+                        }}
+                    />
+                )}
+            />
+        </MenuItem>
+
+        {/* Apply Button */}
+        <MenuItem
+            disableRipple
+            sx={{
+                "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
+            }}
+            style={{ justifyContent: 'center', padding: '10px 0' }}
+        >   
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={handleApplyFilter}
+                size="small"
+                sx={{
+                    width: '100%',
+                }}
+            >
+                Apply
+            </Button>
+        </MenuItem>
+    </LocalizationProvider>
+</Menu>
+
+
         </div>
 
 
@@ -402,8 +586,8 @@ const Incidents = () => {
                             marginBottom: '10px',
                         }}
                     >
-                        <Typography variant="h5" gutterBottom>
-                            2
+                        <Typography variant="h7" gutterBottom>
+                            Categories
                         </Typography>
                         <div style={{ height: '260px', width: '100%' }}>
                             <Bar data={chartData} options={chartOptions} />

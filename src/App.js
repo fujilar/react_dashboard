@@ -31,6 +31,7 @@ import Sidebar from './Sidebar';
 import Dashboard from './Dashboard';
 import Incidents from './Incidents';
 import Problem from './Problem';
+import Change from './Change';
 
 const App = () => {
     return (
@@ -42,7 +43,7 @@ const App = () => {
               <Route path="/" element={<Dashboard />} />
               <Route path="/incidents" element={<Incidents />} />
               <Route path="/problems" element={<Problem />} />
-              <Route path="/changes" element={<h2>Change Request</h2>} />
+              <Route path="/changes" element={<Change />} />
             </Routes>
           </div>
         </div>
