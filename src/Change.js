@@ -35,6 +35,7 @@ const generateRandomIncidents = (count) => {
     return incidents;
 };
 const sampleIncidents = generateRandomIncidents(50);
+console.log(sampleIncidents);
 
 // Group incidents by date
 const groupIncidentsByDate = (incidents) => {
@@ -129,8 +130,10 @@ const SLAChart = () => {
     const filteredIncidents = sampleIncidents.filter(
         (incident) => incident.date >= fromDate && incident.date <= toDate
     );
+    console.log("filtered", filteredIncidents);
 
     const chartData = prepareChartData(filteredIncidents, fromDate, toDate);
+    console.log("chart", chartData);
 
     const chartOptions = {
         responsive: true,

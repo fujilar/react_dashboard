@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Line } from 'react-chartjs-2';
 import {    
         Grid, 
         Grid2, 
@@ -31,6 +32,8 @@ import {
     LinearScale,
     Tooltip,
     Legend,
+    LineElement,
+    PointElement,
 } from 'chart.js';
 
 // Icons for the dashboard items
@@ -48,22 +51,114 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 // Register required Chart.js components
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(LineElement, PointElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 
 // Sample data for incidents (this can later be fetched from an API)
 const sampleIncidents = [
     { id: 1, status: 'Open', sla: 'Met', date: new Date('2024-11-14') },
-    { id: 2, status: 'Resolved', sla: 'Not Met', date: new Date('2024-11-13') },
+    { id: 2, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-13') },
     { id: 3, status: 'In Progress', sla: 'Met', date: new Date('2024-11-12') },
     { id: 4, status: 'Closed', sla: 'Met', date: new Date('2024-11-08') },
-    { id: 5, status: 'On Hold', sla: 'Not Met', date: new Date('2024-10-20') },
+    { id: 5, status: 'On Hold', sla: 'NotMet', date: new Date('2024-10-20') },
     { id: 6, status: 'Open', sla: 'Met', date: new Date('2023-12-31') },
-    { id: 7, status: 'Resolved', sla: 'Not Met', date: new Date('2024-11-27') },
+    { id: 7, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-27') },
+    // today
+    { id: 8, status: 'In Progress', sla: 'Met', date: new Date() },
+    { id: 9, status: 'Closed', sla: 'Met', date: new Date() },
+    // past 7 days
+    { id: 10, status: 'On Hold', sla: 'NotMet', date: subDays(new Date(), 7) },
+    { id: 11, status: 'Open', sla: 'Met', date: subDays(new Date(), 7) },
+    { id: 12, status: 'Resolved', sla: 'NotMet', date: subDays(new Date(), 7) },
+    { id: 13, status: 'In Progress', sla: 'Met', date: subDays(new Date(), 7) },
+    { id: 14, status: 'Closed', sla: 'Met', date: subDays(new Date(), 7) },
+    // this month
+    { id: 15, status: 'On Hold', sla: 'NotMet', date: new Date('2024-11-01') },
+    { id: 16, status: 'Open', sla: 'Met', date: new Date('2024-11-01') },
+    { id: 17, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-01') },
+    { id: 18, status: 'In Progress', sla: 'Met', date: new Date('2024-11-01') },
+    { id: 19, status: 'Closed', sla: 'Met', date: new Date('2024-11-01') },
 ];
 
+console.log(sampleIncidents);
+
+const groupIncidentsByMonth = (incidents) => {
+    const groupedData = {};
+    incidents.forEach((incident) => {
+        const monthKey = format(incident.date, 'yyyy-MM'); // Group by year and month
+        if (!groupedData[monthKey]) {
+            groupedData[monthKey] = { Met: 0, NotMet: 0 };
+        }
+        groupedData[monthKey][incident.sla]++;
+    });
+    return groupedData;
+};
+
+
+// Group incidents by date
+const groupIncidentsByDate = (incidents) => {
+    const groupedData = {};
+    incidents.forEach((incident) => {
+        const dateKey = format(incident.date, 'yyyy-MM-dd');
+        if (!groupedData[dateKey]) {
+            groupedData[dateKey] = { Met: 0, NotMet: 0 };
+        }
+        groupedData[dateKey][incident.sla]++;
+    });
+    return groupedData;
+};
+
+// Prepare chart data
+const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
+    const groupedData = isAllFilter
+        ? groupIncidentsByMonth(filteredIncidents)
+        : groupIncidentsByDate(filteredIncidents);
+
+    // Generate x-axis labels based on the filter type
+    const labels = isAllFilter
+        ? Object.keys(groupedData).sort() // Month keys (e.g., "2024-01", "2024-02")
+        : (() => {
+              const dateRange = [];
+              let currentDate = new Date(fromDate);
+              while (currentDate <= toDate) {
+                  dateRange.push(format(currentDate, 'yyyy-MM-dd'));
+                  currentDate.setDate(currentDate.getDate() + 1);
+              }
+              return dateRange;
+          })();
+
+    // Populate data for each SLA status
+    const metCounts = labels.map((key) => groupedData[key]?.Met || 0);
+    const notMetCounts = labels.map((key) => groupedData[key]?.NotMet || 0);
+
+    return {
+        labels,
+        datasets: [
+            {
+                label: 'SLA Met',
+                data: metCounts,
+                borderColor: '#2ecc71', // Modern emerald green
+                backgroundColor: '#A3E4D7', // Soft light aqua green
+                fill: false,
+                pointRadius: 5,
+                tension: 0.4,
+            },
+            {
+                label: 'SLA Not Met',
+                data: notMetCounts,
+                borderColor: '#e74c3c', // Modern soft red
+                backgroundColor: '#F5B7B1', // Soft light pink
+                fill: false,
+                pointRadius: 5,
+                tension: 0.4,
+            },
+        ],
+    };
+};
+
+
 // Utility function to filter incidents based on the selected filter
-const filterIncidents = (incidents, filter, fromDate, toDate) => {
+const filterTopCards = (incidents, filter, fromDate, toDate) => {
     const now = new Date();
     switch (filter) {
         case 'Today':
@@ -73,9 +168,8 @@ const filterIncidents = (incidents, filter, fromDate, toDate) => {
             last7Days.setDate(now.getDate() - 7);
             return incidents.filter(incident => incident.date >= last7Days);
         case 'Month':
-            const lastMonth = new Date(now);
-            lastMonth.setMonth(now.getMonth() - 1);
-            return incidents.filter(incident => incident.date >= lastMonth);
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // First day of the current month
+            return incidents.filter(incident => incident.date >= startOfMonth);
         case 'Year':
             const lastYear = new Date(now);
             lastYear.setFullYear(now.getFullYear() - 1);
@@ -119,6 +213,32 @@ const chartOptions = {
     },
 };
 
+// Sla Breach Chart Data
+const slaChartOptions = {
+    responsive: true,
+    plugins: {
+        legend: {
+            position: 'top',
+        },
+    },
+    scales: {
+        x: {
+            title: {
+                display: true,
+                text: 'Date',
+            },
+        },
+        y: {
+            beginAtZero: true,
+            title: {
+                display: true,
+                text: 'Incident Count',
+            },
+        },
+    },
+};
+
+
 // Incident sample data
 const sampleData = [
     { number: 1, opened: "2024-11-14", shortDescription: "Issue A", priority: "High", state: "Open", category: "Bug" },
@@ -147,16 +267,16 @@ const Incidents = () => {
     // filter incidents state
     const [filter, setFilter] = useState('All');
 
-    const [fromDate, setFromDate] = useState(null); // State for From date
-    const [toDate, setToDate] = useState(null); // State for To date
+    const [fromDate, setFromDate] = useState(new Date());
+    const [toDate, setToDate] = useState(new Date());
 
     const [tempFromDate, setTempFromDate] = useState(null); // Temporary From date
     const [tempToDate, setTempToDate] = useState(null); // Temporary To date
-
+    
     const [anchorEl, setAnchorEl] = useState(null); // State for dropdown menu
 
 
-    const filteredIncidents = filterIncidents(sampleIncidents, filter, fromDate, toDate);
+    const filteredTopCards = filterTopCards(sampleIncidents, filter, fromDate, toDate);
 
     // data table state
     const [rows, setRows] = useState(sampleData); // Full data
@@ -170,18 +290,50 @@ const Incidents = () => {
 
     // Assigned colour for different incident statuses
     const dashboardItems = [
-        { label: 'Total', value: filteredIncidents.length, color: '#2196f3', icon: <AssignmentIcon /> },
-        { label: 'Open', value: filteredIncidents.filter(incident => incident.status === 'Open').length, color: '#f44336', icon: <InboxIcon /> },
-        { label: 'In Progress', value: filteredIncidents.filter(incident => incident.status === 'In Progress').length, color: '#ff9800', icon: <AutorenewIcon /> },
-        { label: 'On Hold', value: filteredIncidents.filter(incident => incident.status === 'On Hold').length, color: '#9c27b0', icon: <PauseCircleFilledIcon /> },
-        { label: 'Resolved', value: filteredIncidents.filter(incident => incident.status === 'Resolved').length, color: '#4caf50', icon: <CheckCircleIcon /> },
-        { label: 'Closed', value: filteredIncidents.filter(incident => incident.status === 'Closed').length, color: '#607d8b', icon: <DoneAllIcon /> },
+        { label: 'Total', value: filteredTopCards.length, color: '#2196f3', icon: <AssignmentIcon /> },
+        { label: 'Open', value: filteredTopCards.filter(incident => incident.status === 'Open').length, color: '#f44336', icon: <InboxIcon /> },
+        { label: 'In Progress', value: filteredTopCards.filter(incident => incident.status === 'In Progress').length, color: '#ff9800', icon: <AutorenewIcon /> },
+        { label: 'On Hold', value: filteredTopCards.filter(incident => incident.status === 'On Hold').length, color: '#9c27b0', icon: <PauseCircleFilledIcon /> },
+        { label: 'Resolved', value: filteredTopCards.filter(incident => incident.status === 'Resolved').length, color: '#4caf50', icon: <CheckCircleIcon /> },
+        { label: 'Closed', value: filteredTopCards.filter(incident => incident.status === 'Closed').length, color: '#607d8b', icon: <DoneAllIcon /> },
     ];
+
+    const handleFilterChange = (selectedFilter) => {
+        setFilter(selectedFilter);
+
+        // Adjust date ranges based on the filter
+        const today = new Date();
+        switch (selectedFilter) {
+            case 'Today':
+                setFromDate(today);
+                setToDate(today);
+                break;
+            case '7 Days':
+                setFromDate(subDays(today, 7));
+                setToDate(today);
+                break;
+            case 'Month':
+                setFromDate(new Date(today.getFullYear(), today.getMonth(), 1));
+                setToDate(today);
+                break;
+            case 'Year':
+                setFromDate(new Date(today.getFullYear(), 0, 1));
+                setToDate(today);
+                break;
+            case 'Custom':
+                // Custom filter uses temporary date pickers
+                break;
+            default:
+                // Default to All incidents
+                setFromDate(new Date('2000-01-01')); // Arbitrary past date
+                setToDate(today);
+        }
+    };
 
     // Chart Data Preparation
     const slaCounts = {
-        Met: filteredIncidents.filter((i) => i.sla === 'Met').length,
-        NotMet: filteredIncidents.filter((i) => i.sla === 'Not Met').length,
+        Met: filteredTopCards.filter((i) => i.sla === 'Met').length,
+        NotMet: filteredTopCards.filter((i) => i.sla === 'NotMet').length,
     };
 
     const chartData = {
@@ -194,6 +346,8 @@ const Incidents = () => {
             },
         ],
     };
+
+    
 
     // Data Table 
     // Sorting Functionality
@@ -234,17 +388,8 @@ const Incidents = () => {
         setFilteredRows(filtered);
     };
 
-    // Calculate the start of the year and today's date
-    // const startOfYear = new Date(new Date().getFullYear(), 0, 1);
-    // const today = new Date();
-
-    // Format the dates
-    // const formatDate = (date) => date.toLocaleDateString('en-US'); // Format as MM/DD/YYYY
-    // const dateRange = `${formatDate(startOfYear)} - ${formatDate(today)}`;
-
     const today = new Date(); // Format today's date
     const yearStart = new Date(new Date().getFullYear(), 0, 1); // Format start of the year
-    //monthStart
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1); // Format start of the month    
     
     // Function to calculate the date range based on the filter
@@ -263,11 +408,26 @@ const Incidents = () => {
                 return fromDate && toDate
                     ? `${format(fromDate, 'dd MMM yyyy')} - ${format(toDate, 'dd MMM yyyy')}`
                     : 'Please select a date range';
+            case 'All':
+                const slaDates = sampleIncidents
+                    .filter(incident => incident.sla) // Filter only incidents with SLA information
+                    .map(incident => incident.date); // Extract their dates
+    
+                if (slaDates.length === 0) {
+                    // If no incidents with SLA exist
+                    return `No SLA data available`;
+                }
+    
+                const earliestDate = new Date(Math.min(...slaDates)); // Find the earliest SLA date
+                const currentDate = today; // Current date for the range
+    
+                return `${format(earliestDate, 'dd MMM yyyy')} - ${format(currentDate, 'dd MMM yyyy')}`;
             default:
                 return `${format(yearStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
         }
     };
-
+    
+    
     const handleDropdownOpen = (event) => {
         setAnchorEl(event.currentTarget); // Open the dropdown
     };
@@ -288,14 +448,28 @@ const Incidents = () => {
         setAnchorEl(null); // Close dropdown after applying filter
     };
     
+    // sla filtered date
+    const filteredSlaIncidents =
+    filter === 'All'
+        ? sampleIncidents // Include all incidents for "All"
+        : sampleIncidents.filter(
+              (incident) => incident.date >= fromDate && incident.date <= toDate
+          );
+
+    console.log("filtered", filteredSlaIncidents);
+
+    const slaChartData = prepareChartData(filteredSlaIncidents, fromDate, toDate, filter === 'All');
+    console.log("slachart", slaChartData);
 
     return (
         <div style={{ padding: '20px' }}>
             
+            {/* Title */}
             <Typography variant="h6" gutterBottom>
                 Incident Management
             </Typography>
 
+            
             <div
             style={{
                 display: 'flex', // Align items in a row
@@ -303,7 +477,8 @@ const Incidents = () => {
                 alignItems: 'center', // Align items vertically in the center
                 marginBottom: '10px',
             }}
-        >
+            >
+
             {/* Date Range Display */}
             <Typography
                 variant="body2"
@@ -312,7 +487,8 @@ const Incidents = () => {
                     fontStyle: 'italic', // Optional: Italicize for style
                 }}
             >
-                {getDateDisplay()}
+                {/* Display the date range */}
+                {getDateDisplay()} 
             </Typography>
 
             {/* Button Group */}
@@ -321,7 +497,7 @@ const Incidents = () => {
                     <Button
                         key={label}
                         variant={filter === label && filter !== 'Custom' ? 'contained' : 'outlined'}
-                        onClick={() => setFilter(label)}
+                        onClick={() => handleFilterChange(label)}
                         sx={{
                             fontSize: '10px', // Adjust font size here
                         }}
@@ -348,128 +524,127 @@ const Incidents = () => {
 
             {/* Dropdown Menu for Custom Date */}
             <Menu
-    anchorEl={anchorEl}
-    open={Boolean(anchorEl)}
-    onClose={handleDropdownClose}
-    keepMounted
-    disablePortal={false}
-    anchorOrigin={{
-        vertical: 'bottom',
-        horizontal: 'right', // Align to the right edge of the button
-    }}
-    transformOrigin={{
-        vertical: 'top',
-        horizontal: 'right', // Align the top-right corner of the menu with the button
-    }}
-    MenuListProps={{
-        style: { padding: '10px', width: '250px' },
-    }}
-    PopperProps={{
-        modifiers: [
-            {
-                name: 'preventOverflow',
-                options: {
-                    boundary: 'window',
-                },
-            },
-            {
-                name: 'offset',
-                options: {
-                    offset: [0, 10], // Add a vertical margin of 10px
-                },
-            },
-            {
-                name: 'computeStyles',
-                options: {
-                    adaptive: true, // Ensures the menu repositions on window resize
-                    gpuAcceleration: true, // Smooth animations
-                },
-            },
-        ],
-    }}
->
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-        {/* From Date Picker */}
-        <MenuItem
-            disableRipple
-            sx={{
-                "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
-                "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
-                "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
-                "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
-            }}
-        >
-            <DatePicker
-                label="From"
-                value={tempFromDate}
-                onChange={(newValue) => setTempFromDate(newValue)} // Update tempFromDate
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        size="small"
-                        fullWidth
-                        sx={{
-                            marginBottom: '10px',
-                        }}
-                    />
-                )}
-            />
-        </MenuItem>
-
-        {/* To Date Picker */}
-        <MenuItem
-            disableRipple
-            sx={{
-                "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
-                "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
-                "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
-                "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
-            }}
-        >
-            <DatePicker
-                label="To"
-                value={tempToDate}
-                onChange={(newValue) => setTempToDate(newValue)} // Update tempToDate
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        size="small"
-                        fullWidth
-                        sx={{
-                            marginBottom: '10px',
-                        }}
-                    />
-                )}
-            />
-        </MenuItem>
-
-        {/* Apply Button */}
-        <MenuItem
-            disableRipple
-            sx={{
-                "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
-                "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
-                "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
-                "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
-            }}
-            style={{ justifyContent: 'center', padding: '10px 0' }}
-        >   
-            <Button
-                variant="contained"
-                color="primary"
-                onClick={handleApplyFilter}
-                size="small"
-                sx={{
-                    width: '100%',
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleDropdownClose}
+                keepMounted
+                disablePortal={false}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right', // Align to the right edge of the button
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right', // Align the top-right corner of the menu with the button
+                }}
+                MenuListProps={{
+                    style: { padding: '10px', width: '250px' },
+                }}
+                PopperProps={{
+                    modifiers: [
+                        {
+                            name: 'preventOverflow',
+                            options: {
+                                boundary: 'window',
+                            },
+                        },
+                        {
+                            name: 'offset',
+                            options: {
+                                offset: [0, 10], // Add a vertical margin of 10px
+                            },
+                        },
+                        {
+                            name: 'computeStyles',
+                            options: {
+                                adaptive: true, // Ensures the menu repositions on window resize
+                                gpuAcceleration: true, // Smooth animations
+                            },
+                        },
+                    ],
                 }}
             >
-                Apply
-            </Button>
-        </MenuItem>
-    </LocalizationProvider>
-</Menu>
 
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                {/* From Date Picker */}
+                <MenuItem
+                    disableRipple
+                    sx={{
+                        "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                        "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                        "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                        "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
+                    }}
+                >
+                    <DatePicker
+                        label="From"
+                        value={tempFromDate}
+                        onChange={(newValue) => setTempFromDate(newValue)} // Update tempFromDate
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                size="small"
+                                fullWidth
+                                sx={{
+                                    marginBottom: '10px',
+                                }}
+                            />
+                        )}
+                    />
+                </MenuItem>
 
+                {/* To Date Picker */}
+                <MenuItem
+                    disableRipple
+                    sx={{
+                        "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                        "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                        "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                        "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
+                    }}
+                >
+                    <DatePicker
+                        label="To"
+                        value={tempToDate}
+                        onChange={(newValue) => setTempToDate(newValue)} // Update tempToDate
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                size="small"
+                                fullWidth
+                                sx={{
+                                    marginBottom: '10px',
+                                }}
+                            />
+                        )}
+                    />
+                </MenuItem>
+
+                {/* Apply Button */}
+                <MenuItem
+                    disableRipple
+                    sx={{
+                        "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                        "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                        "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                        "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
+                    }}
+                    style={{ justifyContent: 'center', padding: '10px 0' }}
+                >   
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleApplyFilter}
+                        size="small"
+                        sx={{
+                            width: '100%',
+                        }}
+                    >
+                        Apply
+                    </Button>
+                </MenuItem>
+            </LocalizationProvider>
+            </Menu>
         </div>
 
 
@@ -481,7 +656,7 @@ const Incidents = () => {
                 style={{
                     marginBottom: '10px',
                 }}
->
+            >
     {dashboardItems.map((item, index) => (
         <Grid
             item
@@ -570,7 +745,8 @@ const Incidents = () => {
                             SLA Breach
                         </Typography>
                         <div style={{ height: '260px', width: '100%' }}>
-                            <Bar data={chartData} options={chartOptions} />
+                            {/* <Bar data={chartData} options={chartOptions} /> */}
+                            <Line data={slaChartData} options={slaChartOptions} />
                         </div>
                     </div>
                 </Grid>
