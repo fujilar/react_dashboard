@@ -78,6 +78,12 @@ const sampleIncidents = [
     { id: 17, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-01') },
     { id: 18, status: 'In Progress', sla: 'Met', date: new Date('2024-11-01') },
     { id: 19, status: 'Closed', sla: 'Met', date: new Date('2024-11-01') },
+    // this year
+    { id: 20, status: 'On Hold', sla: 'NotMet', date: new Date('2024-12-09') },
+    { id: 21, status: 'Open', sla: 'Met', date: new Date('2024-12-05') },
+    { id: 22, status: 'Resolved', sla: 'NotMet', date: new Date('2024-12-10') },
+    { id: 23, status: 'In Progress', sla: 'Met', date: new Date('2024-12-10') },
+    { id: 24, status: 'Closed', sla: 'Met', date: new Date('2024-01-01') },
 ];
 
 console.log(sampleIncidents);
@@ -131,11 +137,15 @@ const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
     const metCounts = labels.map((key) => groupedData[key]?.Met || 0);
     const notMetCounts = labels.map((key) => groupedData[key]?.NotMet || 0);
 
+    // Calculate total counts
+    const totalMet = metCounts.reduce((sum, count) => sum + count, 0);
+    const totalNotMet = notMetCounts.reduce((sum, count) => sum + count, 0);
+
     return {
         labels,
         datasets: [
             {
-                label: 'SLA Met',
+                label: `SLA Met (${totalMet})`, // Add total count to the label
                 data: metCounts,
                 borderColor: '#2ecc71', // Modern emerald green
                 backgroundColor: '#A3E4D7', // Soft light aqua green
@@ -144,7 +154,7 @@ const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
                 tension: 0.4,
             },
             {
-                label: 'SLA Not Met',
+                label: `SLA Not Met (${totalNotMet})`, // Add total count to the label
                 data: notMetCounts,
                 borderColor: '#e74c3c', // Modern soft red
                 backgroundColor: '#F5B7B1', // Soft light pink
@@ -155,6 +165,7 @@ const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
         ],
     };
 };
+
 
 
 // Utility function to filter incidents based on the selected filter
@@ -216,6 +227,7 @@ const chartOptions = {
 // Sla Breach Chart Data
 const slaChartOptions = {
     responsive: true,
+    maintainAspectRatio: false, // Allows the chart to resize dynamically
     plugins: {
         legend: {
             position: 'top',
@@ -452,9 +464,18 @@ const Incidents = () => {
     const filteredSlaIncidents =
     filter === 'All'
         ? sampleIncidents // Include all incidents for "All"
+        : filter === 'Today'
+        ? sampleIncidents.filter((incident) => {
+              const todayStart = new Date();
+              todayStart.setHours(0, 0, 0, 0); // Normalize to start of the day
+              const todayEnd = new Date();
+              todayEnd.setHours(23, 59, 59, 999); // Normalize to end of the day
+              return incident.date >= todayStart && incident.date <= todayEnd;
+          })
         : sampleIncidents.filter(
               (incident) => incident.date >= fromDate && incident.date <= toDate
           );
+
 
     console.log("filtered", filteredSlaIncidents);
 
