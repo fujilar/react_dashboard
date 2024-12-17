@@ -27,17 +27,20 @@ const generateRandomIncidents = (count) => {
   const statuses = ["Open", "In Progress", "Closed", "Unassigned"];
   const categories = ["Database", "Hardware", "Inquiry", "Network", "Software", "Null"];
   const slaOptions = ["Met", "NotMet"];
+  const priorities = ["Critical", "High", "Moderate", "Low", "Planning"]; // Added priority levels
 
   for (let i = 1; i <= count; i++) {
     const randomDays = Math.floor(Math.random() * 30);
     const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
     const randomCategory = categories[Math.floor(Math.random() * categories.length)];
     const randomSLA = slaOptions[Math.floor(Math.random() * slaOptions.length)];
+    const randomPriority = priorities[Math.floor(Math.random() * priorities.length)]; // Added priority levels
     incidents.push({
       id: i,
       status: randomStatus,
       category: randomCategory,
       sla: randomSLA,
+      priority: randomPriority, // Added priority levels
       date: subDays(new Date(), randomDays),
     });
   }
@@ -154,6 +157,52 @@ const prepareStackedBarChartData = (filteredIncidents) => {
   };
 };
 
+const groupIncidentsByPriorityAndStatus = (incidents) => {
+  const groupedData = {
+    Critical: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
+    High: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
+    Moderate: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
+    Low: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
+    Planning: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
+  };
+
+  incidents.forEach((incident) => {
+    if (groupedData[incident.priority]) {
+      groupedData[incident.priority][incident.status]++;
+    }
+  });
+  return groupedData;
+};
+
+// Prepare Vertical Bar Chart for Priorities
+const preparePriorityChartData = (groupedData) => {
+  return {
+    labels: Object.keys(groupedData),
+    datasets: [
+      {
+        label: "Open",
+        data: Object.values(groupedData).map((priority) => priority.Open),
+        backgroundColor: "#3498db",
+      },
+      {
+        label: "In Progress",
+        data: Object.values(groupedData).map((priority) => priority["In Progress"]),
+        backgroundColor: "#f39c12",
+      },
+      {
+        label: "Closed",
+        data: Object.values(groupedData).map((priority) => priority.Closed),
+        backgroundColor: "#2ecc71",
+      },
+      {
+        label: "Unassigned",
+        data: Object.values(groupedData).map((priority) => priority.Unassigned),
+        backgroundColor: "#e74c3c",
+      },
+    ],
+  };
+};
+
 const SLAChart = () => {
   const [fromDate, setFromDate] = useState(subDays(new Date(), 30));
   const [toDate, setToDate] = useState(new Date());
@@ -222,6 +271,9 @@ const SLAChart = () => {
       },
     },
   };
+
+  const groupedData = groupIncidentsByPriorityAndStatus(filteredIncidents);
+  const priorityBarChartData = preparePriorityChartData(groupedData);
   
   return (
     <div style={{ padding: "20px" }}>
@@ -248,8 +300,19 @@ const SLAChart = () => {
       {filter === "Custom" && (
         <Box mt={2} display="flex" alignItems="center">
           <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DatePicker label="From Date" value={tempFromDate} onChange={setTempFromDate} />
-            <DatePicker label="To Date" value={tempToDate} onChange={setTempToDate} />
+          <DatePicker
+            label="From Date"
+            value={tempFromDate}
+            onChange={(newValue) => setTempFromDate(newValue)}
+            renderInput={(params) => <TextField {...params} />}
+          />
+          <DatePicker
+            label="To Date"
+            value={tempToDate}
+            onChange={(newValue) => setTempToDate(newValue)}
+            renderInput={(params) => <TextField {...params} />}
+          />
+
           </LocalizationProvider>
           <Button onClick={handleCustomFilter} variant="contained" color="primary" style={{ marginLeft: "10px" }}>
             Apply
@@ -268,6 +331,19 @@ const SLAChart = () => {
           <Bar data={stackedBarChartData} options={stackedBarChartOptions} />
         </div>
       </Box>
+
+      <Box mt={4} display="flex" gap={4}>
+        <div style={{ flex: 1 }}>
+          <Typography variant="subtitle1">Incident Grouped (Priority Status)</Typography>
+          <Bar data={priorityBarChartData}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <Typography variant="subtitle1">Incident Categories</Typography>
+          <Bar data={stackedBarChartData} options={stackedBarChartOptions} />
+        </div>
+      </Box>
+
     </div>
   );
 };
