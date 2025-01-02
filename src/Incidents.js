@@ -784,7 +784,7 @@ const Incidents = () => {
                         }}
                     >
                         <Typography variant="h7" gutterBottom>
-                            Categories
+                            Incident Categories
                         </Typography>
                         <div style={{ height: '260px', width: '100%' }}>
                             <Bar data={chartData} options={chartOptions} />

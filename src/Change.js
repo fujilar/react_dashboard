@@ -16,6 +16,9 @@ import {
   Legend,
 } from "chart.js";
 
+import { ArrowUpward, ArrowDownward } from "@mui/icons-material";
+import { Grid } from "@mui/material";
+
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 
@@ -30,7 +33,11 @@ const generateRandomIncidents = (count) => {
   const priorities = ["Critical", "High", "Moderate", "Low", "Planning"]; // Added priority levels
 
   for (let i = 1; i <= count; i++) {
-    const randomDays = Math.floor(Math.random() * 30);
+    // Generate random days, with a 20% chance of being more than 30 days
+    const randomDays = Math.random() < 0.8 
+      ? Math.floor(Math.random() * 30)  // 80% chance: within 30 days
+      : Math.floor(Math.random() * 30) + 31; // 20% chance: more than 30 days
+
     const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
     const randomCategory = categories[Math.floor(Math.random() * categories.length)];
     const randomSLA = slaOptions[Math.floor(Math.random() * slaOptions.length)];
@@ -42,10 +49,12 @@ const generateRandomIncidents = (count) => {
       sla: randomSLA,
       priority: randomPriority, // Added priority levels
       date: subDays(new Date(), randomDays),
+      lastUpdated: subDays(new Date(), randomDays), // Random last updated date
     });
   }
   return incidents;
 };
+
 
 const sampleIncidents = generateRandomIncidents(100);
 
@@ -99,6 +108,31 @@ const prepareSLATrendData = (filteredIncidents, fromDate, toDate) => {
       },
     ],
   };
+};
+
+const slaChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false, // Allows the chart to resize dynamically
+  plugins: {
+      legend: {
+          position: 'top',
+      },
+  },
+  scales: {
+      x: {
+          title: {
+              display: true,
+              text: 'Date',
+          },
+      },
+      y: {
+          beginAtZero: true,
+          title: {
+              display: true,
+              text: 'Incident Count',
+          },
+      },
+  },
 };
 
 // Group incidents by category and status
@@ -203,6 +237,51 @@ const preparePriorityChartData = (groupedData) => {
   };
 };
 
+const priorityBarChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false, // Allows the chart to resize dynamically
+  plugins: {
+    legend: { position: "top" },
+    tooltip: {
+      callbacks: {
+        label: function (context) {
+          const value = context.raw;
+          if (value === 0) {
+            return null; // Hide tooltip for zero values
+          }
+          return `${context.dataset.label}: ${value}`;
+        },
+      },
+    },
+    datalabels: {
+      display: false, // Disable data labels on bars
+    },
+  },
+  scales: {
+    x: {
+      stacked: false, // Disable stacking for the x-axis
+      title: { display: true, text: "Priorities" },
+    },
+    y: {
+      stacked: false, // Disable stacking for the y-axis
+      title: { display: true, text: "Count" },
+      beginAtZero: true,
+    },
+  },
+};
+
+
+// Filter incidents not updated in the last 7 days
+const filterIncidentsNotUpdated = (incidents) => {
+  const sevenDaysAgo = subDays(new Date(), 7);
+  return incidents.filter((incident) => incident.lastUpdated < sevenDaysAgo);
+};
+
+// Get count of incidents not updated in 7 days
+const incidentsNotUpdated = filterIncidentsNotUpdated(sampleIncidents);
+const countNotUpdated = incidentsNotUpdated.length;
+
+
 const SLAChart = () => {
   const [fromDate, setFromDate] = useState(subDays(new Date(), 30));
   const [toDate, setToDate] = useState(new Date());
@@ -248,6 +327,7 @@ const SLAChart = () => {
 
   const stackedBarChartOptions = {
     responsive: true,
+    maintainAspectRatio: false, // Allows the chart to resize dynamically
     indexAxis: "y",
     plugins: {
       legend: { position: "top" },
@@ -275,6 +355,20 @@ const SLAChart = () => {
   const groupedData = groupIncidentsByPriorityAndStatus(filteredIncidents);
   const priorityBarChartData = preparePriorityChartData(groupedData);
   
+  const openIncidentsMoreThan30Days = sampleIncidents.filter(
+    (incident) => 
+      incident.status !== "Closed" && 
+      incident.date <= subDays(new Date(), 30)
+  ).length;
+
+  // Filter for Unassigned Incidents
+const getUnassignedIncidentsCount = (incidents) => {
+  return incidents.filter((incident) => incident.status === "Unassigned").length;
+};
+
+// Dynamically get unassigned count
+const unassignedCount = getUnassignedIncidentsCount(filteredIncidents);
+
   return (
     <div style={{ padding: "20px" }}>
       <Typography variant="h6" gutterBottom>
@@ -320,29 +414,272 @@ const SLAChart = () => {
         </Box>
       )}
 
-      {/* Charts */}
-      <Box mt={4} display="flex" gap={4}>
-        <div style={{ flex: 1 }}>
-          <Typography variant="subtitle1">SLA Trends</Typography>
-          <Line data={slaTrendData} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <Typography variant="subtitle1">Incident Categories</Typography>
-          <Bar data={stackedBarChartData} options={stackedBarChartOptions} />
-        </div>
-      </Box>
+      {/*Row 1*/}
+      <Grid container spacing={1}>
+          {/* left */}
+          <Grid item xs={12} sm={12} md={6}>
+              <div
+                  style={{
+                      padding: '20px',
+                      borderRadius: '8px',
+                      boxSizing: 'border-box',
+                      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                      marginBottom: '10px',
+                  }}
+              >
+                  <Typography variant="subtitle1">SLA Trends</Typography>
+                  <div style={{ height: '260px', width: '100%' }}>
+                  <Line data={slaTrendData} options={slaChartOptions} />
+                  </div>
+              </div>
+          </Grid>
+          
+          {/* right */}
+          <Grid item xs={12} sm={12} md={6}>
+              <div
+                  style={{
+                      padding: '20px',
+                      borderRadius: '8px',
+                      boxSizing: 'border-box',
+                      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                      marginBottom: '10px',
+                  }}
+              >
+                  <Typography variant="subtitle1">Incident Categories</Typography>
+                  <div style={{ height: '260px', width: '100%' }}>
+                      <Bar data={stackedBarChartData} options={stackedBarChartOptions} />
+                  </div>
+              </div>
+          </Grid>
+        
+      </Grid>
+      
+      {/*Row 2*/}
+      <Grid container spacing={1}> 
+          {/* left */}
+          <Grid item xs={12} sm={12} md={6}>
+              <div
+                  style={{
+                      padding: '20px',
+                      borderRadius: '8px',
+                      boxSizing: 'border-box',
+                      // marginRight: '10px',
+                      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                      marginBottom: '10px',
+                  }}
+              >
+                  <Typography variant="subtitle1">Incident Grouped (Priority Status)</Typography>
+                  <div style={{ height: '260px', width: '100%' }}>
+                      <Bar data={priorityBarChartData} options={priorityBarChartOptions} />
+                  </div>
+              </div>
+          </Grid>
+          
+          {/* right */}
+          <Grid item xs={12} sm={12} md={6}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between", // Evenly distribute the divs vertically
+              height: "335px", // Match the height of the left chart
+            }}
+          >
 
-      <Box mt={4} display="flex" gap={4}>
-        <div style={{ flex: 1 }}>
-          <Typography variant="subtitle1">Incident Grouped (Priority Status)</Typography>
-          <Bar data={priorityBarChartData}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <Typography variant="subtitle1">Incident Categories</Typography>
-          <Bar data={stackedBarChartData} options={stackedBarChartOptions} />
-        </div>
-      </Box>
+          {/* Overdue Incidents */}
+          <div
+            style={{
+              padding: "10px 20px", // Reduced padding for tighter layout
+              borderRadius: "8px",
+              boxSizing: "border-box",
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+              height: "120px", // Slightly increased height for better spacing
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between", // Space between the left and right sections
+              width: "100%",
+            }}
+          >
+            {/* Left Section: Title and Subtitle */}
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1 }}>
+              <span style={{ fontWeight: "bold", fontSize: "20px", marginBottom: "5px" }}>Overdue Incidents</span>
+              <span style={{ fontSize: "12px", color: "grey" }}>More than 30 days</span>
+            </div>
+
+            {/* Right Section: Count and Date Range */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column", // Stack the count and date range vertically
+                alignItems: "flex-end", // Align to the right
+                justifyContent: "center", // Vertically center the content
+              }}
+            >
+              {/* Count */}
+              <span
+                style={{
+                  fontSize: "30px", // Increased size for emphasis
+                  color: "#2196F3",
+                  fontWeight: "bold",
+                  lineHeight: "1",
+                  marginBottom: "5px", // Space between count and date range
+                }}
+              >
+                {openIncidentsMoreThan30Days}
+              </span>
+
+              {/* Date Range */}
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "grey",
+                  lineHeight: "1",
+                }}
+              >
+                {`Jan 1, ${new Date().getFullYear()} - ${new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}`}
+              </span>
+            </div>
+          </div>
+
+
+            
+          </div>
+
+          {/* Stale Incidents */}
+          <div
+            style={{
+              padding: "20px",
+              borderRadius: "8px",
+              boxSizing: "border-box",
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+              height: "106px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between", // Space between left and right sections
+            }}
+          >
+            {/* Left Section */}
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1 }}>
+              <span style={{ fontWeight: "bold", fontSize: "20px", marginBottom: "5px" }}>Stale Incidents</span>
+              <span style={{ fontSize: "12px", color: "grey" }}>Not updated for more than 7 days</span>
+            </div>
+
+            {/* Right Section */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-end", // Align to the right
+                justifyContent: "center", // Vertically center
+              }}
+            >
+              {/* Count */}
+              <span
+                style={{
+                  fontSize: "30px", // Bigger font for emphasis
+                  color: "#2196F3",
+                  fontWeight: "bold",
+                  lineHeight: "1",
+                  marginBottom: "5px", // Space between count and date range
+                }}
+              >
+                {countNotUpdated}
+              </span>
+
+              {/* Date Range */}
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "grey",
+                  lineHeight: "1",
+                }}
+              >
+                {`${new Date(new Date().setDate(new Date().getDate() - 7)).toLocaleDateString("en-US", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })} - ${new Date().toLocaleDateString("en-US", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}`}
+              </span>
+            </div>
+          </div>
+
+          {/* Unassigned Incidents */}
+          <div
+            style={{
+              padding: "20px",
+              borderRadius: "8px",
+              boxSizing: "border-box",
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+              height: "106px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            {/* Left Section: Title and Subtitle */}
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1 }}>
+              <span style={{ fontWeight: "bold", fontSize: "20px", marginBottom: "5px" }}>Unassigned</span>
+              <span style={{ fontSize: "12px", color: "grey" }}>
+                Incidents without assignment
+              </span>
+            </div>
+
+            {/* Right Section: Count and Date */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column", // Stack count and date vertically
+                alignItems: "flex-end", // Align to the right
+                justifyContent: "center",
+                height: "100%", // Ensure full height alignment
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "30px", // Large font for count
+                  color: "#2196F3",
+                  fontWeight: "bold",
+                  lineHeight: "1",
+                }}
+              >
+                {unassignedCount}
+              </span>
+              <span
+                style={{
+                  fontSize: "12px", // Smaller font for date
+                  color: "grey",
+                  marginTop: "5px", // Spacing below the count
+                }}
+              >
+                {`Jan 1, ${new Date().getFullYear()} - ${new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}`}
+              </span>
+            </div>
+
+          </div>
+
+
+
+          </Grid> 
+      </Grid>
 
     </div>
   );
