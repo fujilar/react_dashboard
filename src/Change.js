@@ -259,6 +259,8 @@ const prepareStackedBarChartData = (filteredIncidents) => {
   };
 };
 
+// chart 3.1.4
+// Group incidents by priority and status
 const groupIncidentsByPriorityAndStatus = (incidents) => {
   const groupedData = {
     Critical: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
@@ -276,6 +278,7 @@ const groupIncidentsByPriorityAndStatus = (incidents) => {
   return groupedData;
 };
 
+// chart 3.1.2
 // Prepare Vertical Bar Chart for Priorities
 const preparePriorityChartData = (groupedData) => {
   return {
@@ -284,27 +287,29 @@ const preparePriorityChartData = (groupedData) => {
       {
         label: "Open",
         data: Object.values(groupedData).map((priority) => priority.Open),
-        backgroundColor: "#3498db",
+        backgroundColor: "#e74c3c",
       },
       {
         label: "In Progress",
         data: Object.values(groupedData).map((priority) => priority["In Progress"]),
-        backgroundColor: "#f39c12",
+        backgroundColor: "#f1c40f",
       },
       {
         label: "Closed",
         data: Object.values(groupedData).map((priority) => priority.Closed),
-        backgroundColor: "#2ecc71",
+        backgroundColor: "#95a5a6",
       },
       {
         label: "Unassigned",
         data: Object.values(groupedData).map((priority) => priority.Unassigned),
-        backgroundColor: "#e74c3c",
+        backgroundColor: "#4B4B4B",
       },
     ],
   };
 };
 
+
+// chart 3.2.1
 const priorityBarChartOptions = {
   responsive: true,
   maintainAspectRatio: false, // Allows the chart to resize dynamically
@@ -338,15 +343,18 @@ const priorityBarChartOptions = {
   },
 };
 
-
+// card 2.3
 // Filter incidents not updated in the last 7 days
 const filterIncidentsNotUpdated = (incidents) => {
   const sevenDaysAgo = subDays(new Date(), 7);
   return incidents.filter((incident) => incident.lastUpdated < sevenDaysAgo);
 };
 
+// card 2.2
 // Get count of incidents not updated in 7 days
 const incidentsNotUpdated = filterIncidentsNotUpdated(sampleIncidents);
+
+// card 2.1
 const countNotUpdated = incidentsNotUpdated.length;
 
 
@@ -386,34 +394,46 @@ const SLAChart = () => {
     }
   };
 
+  // Filter incidents based on date range 
+  // Important
   const filteredIncidents = sampleIncidents.filter(
     (incident) => incident.date >= fromDate && incident.date <= toDate
   );
 
   // chart 1.1.1
+  // Prepare SLA Trends Data
   const slaTrendData = prepareSLATrendData(filteredIncidents, fromDate, toDate);
 
   // chart 2.1.1
+  // Prepare Stacked Bar Chart Data for Incident Categories
   const stackedBarChartData = prepareStackedBarChartData(filteredIncidents);
 
   
-
+  // chart 3.1.3
+  // Group incidents by priority and status
   const groupedData = groupIncidentsByPriorityAndStatus(filteredIncidents);
+
+  // chart 3.1.1
+  // Prepare Vertical Bar Chart for Priorities
   const priorityBarChartData = preparePriorityChartData(groupedData);
   
+  // card 1.1 
+  // function for Overdue Incidents
   const openIncidentsMoreThan30Days = sampleIncidents.filter(
     (incident) => 
       incident.status !== "Closed" && 
       incident.date <= subDays(new Date(), 30)
   ).length;
 
+  // card 3.2
   // Filter for Unassigned Incidents
-const getUnassignedIncidentsCount = (incidents) => {
-  return incidents.filter((incident) => incident.status === "Unassigned").length;
-};
+  const getUnassignedIncidentsCount = (incidents) => {
+    return incidents.filter((incident) => incident.status === "Unassigned").length;
+  };
 
-// Dynamically get unassigned count
-const unassignedCount = getUnassignedIncidentsCount(filteredIncidents);
+  // card 3.1
+  // Dynamically get unassigned count
+  const unassignedCount = getUnassignedIncidentsCount(filteredIncidents);
 
   return (
     <div style={{ padding: "20px" }}>
@@ -511,7 +531,6 @@ const unassignedCount = getUnassignedIncidentsCount(filteredIncidents);
                       padding: '20px',
                       borderRadius: '8px',
                       boxSizing: 'border-box',
-                      // marginRight: '10px',
                       boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                       marginBottom: '10px',
                   }}

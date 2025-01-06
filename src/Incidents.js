@@ -49,44 +49,79 @@ import { format, subDays } from 'date-fns';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { ca } from 'date-fns/locale';
 
 // Register required Chart.js components
 ChartJS.register(LineElement, PointElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 
 // Sample data for incidents (this can later be fetched from an API)
-const sampleIncidents = [
-    { id: 1, status: 'Open', sla: 'Met', date: new Date('2024-11-14') },
-    { id: 2, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-13') },
-    { id: 3, status: 'In Progress', sla: 'Met', date: new Date('2024-11-12') },
-    { id: 4, status: 'Closed', sla: 'Met', date: new Date('2024-11-08') },
-    { id: 5, status: 'On Hold', sla: 'NotMet', date: new Date('2024-10-20') },
-    { id: 6, status: 'Open', sla: 'Met', date: new Date('2023-12-31') },
-    { id: 7, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-27') },
-    // today
-    { id: 8, status: 'In Progress', sla: 'Met', date: new Date() },
-    { id: 9, status: 'Closed', sla: 'Met', date: new Date() },
-    // past 7 days
-    { id: 10, status: 'On Hold', sla: 'NotMet', date: subDays(new Date(), 7) },
-    { id: 11, status: 'Open', sla: 'Met', date: subDays(new Date(), 7) },
-    { id: 12, status: 'Resolved', sla: 'NotMet', date: subDays(new Date(), 7) },
-    { id: 13, status: 'In Progress', sla: 'Met', date: subDays(new Date(), 7) },
-    { id: 14, status: 'Closed', sla: 'Met', date: subDays(new Date(), 7) },
-    // this month
-    { id: 15, status: 'On Hold', sla: 'NotMet', date: new Date('2024-11-01') },
-    { id: 16, status: 'Open', sla: 'Met', date: new Date('2024-11-01') },
-    { id: 17, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-01') },
-    { id: 18, status: 'In Progress', sla: 'Met', date: new Date('2024-11-01') },
-    { id: 19, status: 'Closed', sla: 'Met', date: new Date('2024-11-01') },
-    // this year
-    { id: 20, status: 'On Hold', sla: 'NotMet', date: new Date('2024-12-09') },
-    { id: 21, status: 'Open', sla: 'Met', date: new Date('2024-12-05') },
-    { id: 22, status: 'Resolved', sla: 'NotMet', date: new Date('2024-12-10') },
-    { id: 23, status: 'In Progress', sla: 'Met', date: new Date('2024-12-10') },
-    { id: 24, status: 'Closed', sla: 'Met', date: new Date('2024-01-01') },
-];
+// const sampleIncidents = [
+//     { id: 1, status: 'Open', sla: 'Met', date: new Date('2024-11-14') },
+//     { id: 2, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-13'), category: 'Software' },
+//     { id: 3, status: 'In Progress', sla: 'Met', date: new Date('2024-11-12'), category: 'Hardware' },
+//     { id: 4, status: 'Closed', sla: 'Met', date: new Date('2024-11-08'), category: 'Database' },
+//     { id: 5, status: 'On Hold', sla: 'NotMet', date: new Date('2024-10-20'), category: 'Hardware' },
+//     { id: 6, status: 'Open', sla: 'Met', date: new Date('2023-12-31'), category: 'Hardware' },
+//     { id: 7, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-27'), category: 'Inquiry' },
+//     // today
+//     { id: 8, status: 'In Progress', sla: 'Met', date: new Date(), category: 'Hardware' },
+//     { id: 9, status: 'Closed', sla: 'Met', date: new Date(), category: 'Database' },
+//     // past 7 days
+//     { id: 10, status: 'On Hold', sla: 'NotMet', date: subDays(new Date(), 7), category: 'Hardware' },
+//     { id: 11, status: 'Open', sla: 'Met', date: subDays(new Date(), 7), category: 'Inquiry' },
+//     { id: 12, status: 'Resolved', sla: 'NotMet', date: subDays(new Date(), 7), category: 'Inquiry' },
+//     { id: 13, status: 'In Progress', sla: 'Met', date: subDays(new Date(), 7), category: 'Hardware' },
+//     { id: 14, status: 'Closed', sla: 'Met', date: subDays(new Date(), 7), category: 'Database' },
+//     // this month
+//     { id: 15, status: 'On Hold', sla: 'NotMet', date: new Date('2024-11-01'), category: 'Hardware' },
+//     { id: 16, status: 'Open', sla: 'Met', date: new Date('2024-11-01'), category: 'Inquiry' },
+//     { id: 17, status: 'Resolved', sla: 'NotMet', date: new Date('2024-11-01'), category: 'Inquiry' },
+//     { id: 18, status: 'In Progress', sla: 'Met', date: new Date('2024-11-01'), category: 'Hardware' },
+//     { id: 19, status: 'Closed', sla: 'Met', date: new Date('2024-11-01'), category: 'Database' },
+//     // this year
+//     { id: 20, status: 'On Hold', sla: 'NotMet', date: new Date('2024-12-09'), category: 'Hardware' },
+//     { id: 21, status: 'Open', sla: 'Met', date: new Date('2024-12-05'), category: 'Inquiry' },
+//     { id: 22, status: 'Resolved', sla: 'NotMet', date: new Date('2024-12-10'), category: 'Inquiry' },
+//     { id: 23, status: 'In Progress', sla: 'Met', date: new Date('2024-12-10'), category: 'Hardware' },
+//     { id: 24, status: 'Closed', sla: 'Met', date: new Date('2024-01-01'), category: 'Database' },
+// ];
 
-console.log(sampleIncidents);
+// console.log(sampleIncidents);
+
+// Generate random incidents
+const generateRandomIncidents = (count) => {
+    const incidents = [];
+    const statuses = ["Open", "In Progress", "Closed", "Unassigned", "On Hold", "Resolved"];
+    const categories = ["Database", "Hardware", "Inquiry", "Network", "Software", "Null"];
+    const slaOptions = ["Met", "NotMet"];
+    const priorities = ["Critical", "High", "Moderate", "Low", "Planning"]; // Added priority levels
+  
+    for (let i = 1; i <= count; i++) {
+      // Generate random days, with a 20% chance of being more than 30 days
+      const randomDays = Math.random() < 0.8 
+        ? Math.floor(Math.random() * 30)  // 80% chance: within 30 days
+        : Math.floor(Math.random() * 30) + 31; // 20% chance: more than 30 days
+  
+      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+      const randomSLA = slaOptions[Math.floor(Math.random() * slaOptions.length)];
+      const randomPriority = priorities[Math.floor(Math.random() * priorities.length)]; // Added priority levels
+      incidents.push({
+        id: i,
+        status: randomStatus,
+        category: randomCategory,
+        sla: randomSLA,
+        priority: randomPriority, // Added priority levels
+        date: subDays(new Date(), randomDays),
+        lastUpdated: subDays(new Date(), randomDays), // Random last updated date
+      });
+    }
+    return incidents;
+  };
+  
+  
+  const sampleIncidents = generateRandomIncidents(100);
 
 const groupIncidentsByMonth = (incidents) => {
     const groupedData = {};
@@ -145,29 +180,33 @@ const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
         labels,
         datasets: [
             {
-                label: `SLA Met (${totalMet})`, // Add total count to the label
+                label: `SLA Met`, // Add total count to the label
                 data: metCounts,
                 borderColor: '#2ecc71', // Modern emerald green
                 backgroundColor: '#A3E4D7', // Soft light aqua green
                 fill: false,
-                pointRadius: 5,
-                tension: 0.4,
+                pointRadius: 2, // Smaller point radius
+                pointHoverRadius: 3, // Hover effect point size
+                borderWidth: 1, // Thinner line
+                tension: 0.2, // Smaller curve tension
             },
             {
-                label: `SLA Not Met (${totalNotMet})`, // Add total count to the label
+                label: `SLA Not Met`, // Add total count to the label
                 data: notMetCounts,
                 borderColor: '#e74c3c', // Modern soft red
                 backgroundColor: '#F5B7B1', // Soft light pink
                 fill: false,
-                pointRadius: 5,
-                tension: 0.4,
+                pointRadius: 2, // Smaller point radius
+                pointHoverRadius: 3, // Hover effect point size
+                borderWidth: 1, // Thinner line
+                tension: 0.2, // Smaller curve tension
             },
         ],
     };
 };
 
 
-
+// Top card filter
 // Utility function to filter incidents based on the selected filter
 const filterTopCards = (incidents, filter, fromDate, toDate) => {
     const now = new Date();
@@ -232,6 +271,9 @@ const slaChartOptions = {
         legend: {
             position: 'top',
         },
+        datalabels: {
+            display: false, // Disables data labels inside the chart
+        },
     },
     scales: {
         x: {
@@ -275,19 +317,132 @@ const sampleData = [
     { number: 20, opened: "2024-10-26", shortDescription: "Issue T", priority: "Low", state: "Resolved", category: "Bug" },
 ];
 
+// chart 2.2.1
+const stackedBarChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false, // Allows the chart to resize dynamically
+    indexAxis: "y",
+    plugins: {
+        legend: { position: "top" },
+        datalabels: {
+        anchor: "center",
+        align: "center",
+        color: "white",
+        formatter: (value) => (value > 0 ? `${value}%` : ""), // Show only if value > 0
+        },
+    },
+    scales: {
+        x: {
+        stacked: true,
+        title: { display: true, text: "Percentage (%)" },
+        min: 0, // Set minimum value to 0
+        max: 100, // Restrict x-axis to 100%
+        },
+        y: {
+        stacked: true,
+        title: { display: true, text: "Incident Categories" },
+        },
+    },
+};
+
+// chart 2.1.3
+// Group incidents by category and status
+const groupIncidentsByCategoryAndStatus = (incidents) => {
+    const groupedData = {};
+
+    // Group incidents by category and status
+    incidents.forEach((incident) => {
+        if (!groupedData[incident.category]) {
+        groupedData[incident.category] = { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 };
+        }
+        groupedData[incident.category][incident.status]++;
+    });
+
+    // Calculate percentages correctly per category with adjustment
+    Object.keys(groupedData).forEach((category) => {
+        const total = Object.values(groupedData[category]).reduce((sum, val) => sum + val, 0);
+
+        if (total > 0) {
+        const rawPercentages = {};
+        let roundedPercentages = {};
+        let totalRounded = 0;
+
+        // Step 1: Calculate raw percentages
+        Object.keys(groupedData[category]).forEach((status) => {
+            rawPercentages[status] = (groupedData[category][status] / total) * 100;
+        });
+
+        // Step 2: Round percentages and calculate the rounding difference
+        Object.keys(rawPercentages).forEach((status) => {
+            roundedPercentages[status] = Math.floor(rawPercentages[status]);
+            totalRounded += roundedPercentages[status];
+        });
+
+        // Step 3: Adjust residuals to make total equal 100
+        const residual = 100 - totalRounded;
+        const sortedStatuses = Object.keys(rawPercentages).sort(
+            (a, b) => rawPercentages[b] - rawPercentages[a]
+        );
+
+        for (let i = 0; i < residual; i++) {
+            roundedPercentages[sortedStatuses[i]]++;
+        }
+
+        groupedData[category] = roundedPercentages;
+        }
+    });
+
+    return groupedData;
+};
+
+
+// chart 2.1.2
+// Prepare Stacked Bar Chart Data
+const prepareStackedBarChartData = (filteredIncidents) => {
+    // Exclude "On Hold" and "Resolved" from the incident categories
+    const filteredCategories = filteredIncidents.filter(
+        (incident) => incident.status !== "On Hold" && incident.status !== "Resolved"
+    );
+
+    const groupedData = groupIncidentsByCategoryAndStatus(filteredCategories);
+
+    return {
+        labels: Object.keys(groupedData),
+        datasets: [
+        {
+            label: "Open",
+            data: Object.values(groupedData).map((category) => category.Open),
+            backgroundColor: "#e74c3c",
+        },
+        {
+            label: "In Progress",
+            data: Object.values(groupedData).map((category) => category["In Progress"]),
+            backgroundColor: "#f1c40f",
+        },
+        {
+            label: "Closed",
+            data: Object.values(groupedData).map((category) => category.Closed),
+            backgroundColor: "#95a5a6",
+        },
+        {
+            label: "Unassigned",
+            data: Object.values(groupedData).map((category) => category.Unassigned),
+            backgroundColor: "#4B4B4B",
+        },
+        ],
+    };
+};
 const Incidents = () => {
     // filter incidents state
     const [filter, setFilter] = useState('All');
-
     const [fromDate, setFromDate] = useState(new Date());
     const [toDate, setToDate] = useState(new Date());
-
     const [tempFromDate, setTempFromDate] = useState(null); // Temporary From date
     const [tempToDate, setTempToDate] = useState(null); // Temporary To date
-    
     const [anchorEl, setAnchorEl] = useState(null); // State for dropdown menu
 
-
+    // Top card
+    // Filtered top cards
     const filteredTopCards = filterTopCards(sampleIncidents, filter, fromDate, toDate);
 
     // data table state
@@ -299,7 +454,8 @@ const Incidents = () => {
     const [sortConfig, setSortConfig] = useState({ key: "number", direction: "asc" });
 
     const [customRange, setCustomRange] = useState('Please select a date range'); // Custom date range
-
+    
+    // Top card
     // Assigned colour for different incident statuses
     const dashboardItems = [
         { label: 'Total', value: filteredTopCards.length, color: '#2196f3', icon: <AssignmentIcon /> },
@@ -358,8 +514,6 @@ const Incidents = () => {
             },
         ],
     };
-
-    
 
     // Data Table 
     // Sorting Functionality
@@ -482,7 +636,13 @@ const Incidents = () => {
     const slaChartData = prepareChartData(filteredSlaIncidents, fromDate, toDate, filter === 'All');
     console.log("slachart", slaChartData);
 
+     // chart 2.1.1
+    // Prepare Stacked Bar Chart Data for Incident Categories
+    const stackedBarChartData = prepareStackedBarChartData(filteredSlaIncidents);
+
     return (
+
+        // Main Container
         <div style={{ padding: '20px' }}>
             
             {/* Title */}
@@ -490,187 +650,187 @@ const Incidents = () => {
                 Incident Management
             </Typography>
 
-            
+            {/* date display and buttons dropdown */}
             <div
-            style={{
-                display: 'flex', // Align items in a row
-                justifyContent: 'space-between', // Space out elements
-                alignItems: 'center', // Align items vertically in the center
-                marginBottom: '10px',
-            }}
-            >
-
-            {/* Date Range Display */}
-            <Typography
-                variant="body2"
                 style={{
-                    color: 'grey', // Make the text less prominent
-                    fontStyle: 'italic', // Optional: Italicize for style
+                    display: 'flex', // Align items in a row
+                    justifyContent: 'space-between', // Space out elements
+                    alignItems: 'center', // Align items vertically in the center
+                    marginBottom: '10px',
                 }}
-            >
-                {/* Display the date range */}
-                {getDateDisplay()} 
-            </Typography>
+                >
 
-            {/* Button Group */}
-            <ButtonGroup>
-                {['All', 'Today', '7 Days', 'Month'].map((label) => (
+                {/* Date Range Display */}
+                <Typography
+                    variant="body2"
+                    style={{
+                        color: 'grey', // Make the text less prominent
+                        fontStyle: 'italic', // Optional: Italicize for style
+                    }}
+                >
+                    {/* Display the date range */}
+                    {getDateDisplay()} 
+                </Typography>
+
+                {/* Button Group */}
+                <ButtonGroup>
+                    {['All', 'Today', '7 Days', 'Month'].map((label) => (
+                        <Button
+                            key={label}
+                            variant={filter === label && filter !== 'Custom' ? 'contained' : 'outlined'}
+                            onClick={() => handleFilterChange(label)}
+                            sx={{
+                                fontSize: '10px', // Adjust font size here
+                            }}
+                        >
+                            {label}
+                        </Button>
+                    ))}
+
+                    {/* Custom Button */}
                     <Button
-                        key={label}
-                        variant={filter === label && filter !== 'Custom' ? 'contained' : 'outlined'}
-                        onClick={() => handleFilterChange(label)}
+                        variant={filter === 'Custom' ? 'contained' : 'outlined'}
+                        onClick={(event) => {
+                            setFilter('Custom'); // Set filter to "Custom"
+                            handleDropdownOpen(event); // Open the dropdown
+                        }}
                         sx={{
-                            fontSize: '10px', // Adjust font size here
+                            fontSize: '10px',
                         }}
                     >
-                        {label}
+                        Custom
                     </Button>
-                ))}
 
-                {/* Custom Button */}
-                <Button
-                    variant={filter === 'Custom' ? 'contained' : 'outlined'}
-                    onClick={(event) => {
-                        setFilter('Custom'); // Set filter to "Custom"
-                        handleDropdownOpen(event); // Open the dropdown
+                </ButtonGroup>
+
+                {/* Dropdown Menu for Custom Date */}
+                <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleDropdownClose}
+                    keepMounted
+                    disablePortal={false}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right', // Align to the right edge of the button
                     }}
-                    sx={{
-                        fontSize: '10px',
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right', // Align the top-right corner of the menu with the button
+                    }}
+                    MenuListProps={{
+                        style: { padding: '10px', width: '250px' },
+                    }}
+                    PopperProps={{
+                        modifiers: [
+                            {
+                                name: 'preventOverflow',
+                                options: {
+                                    boundary: 'window',
+                                },
+                            },
+                            {
+                                name: 'offset',
+                                options: {
+                                    offset: [0, 10], // Add a vertical margin of 10px
+                                },
+                            },
+                            {
+                                name: 'computeStyles',
+                                options: {
+                                    adaptive: true, // Ensures the menu repositions on window resize
+                                    gpuAcceleration: true, // Smooth animations
+                                },
+                            },
+                        ],
                     }}
                 >
-                    Custom
-                </Button>
 
-            </ButtonGroup>
-
-            {/* Dropdown Menu for Custom Date */}
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleDropdownClose}
-                keepMounted
-                disablePortal={false}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right', // Align to the right edge of the button
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right', // Align the top-right corner of the menu with the button
-                }}
-                MenuListProps={{
-                    style: { padding: '10px', width: '250px' },
-                }}
-                PopperProps={{
-                    modifiers: [
-                        {
-                            name: 'preventOverflow',
-                            options: {
-                                boundary: 'window',
-                            },
-                        },
-                        {
-                            name: 'offset',
-                            options: {
-                                offset: [0, 10], // Add a vertical margin of 10px
-                            },
-                        },
-                        {
-                            name: 'computeStyles',
-                            options: {
-                                adaptive: true, // Ensures the menu repositions on window resize
-                                gpuAcceleration: true, // Smooth animations
-                            },
-                        },
-                    ],
-                }}
-            >
-
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-                {/* From Date Picker */}
-                <MenuItem
-                    disableRipple
-                    sx={{
-                        "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
-                        "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
-                        "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
-                        "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
-                    }}
-                >
-                    <DatePicker
-                        label="From"
-                        value={tempFromDate}
-                        onChange={(newValue) => setTempFromDate(newValue)} // Update tempFromDate
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                size="small"
-                                fullWidth
-                                sx={{
-                                    marginBottom: '10px',
-                                }}
-                            />
-                        )}
-                    />
-                </MenuItem>
-
-                {/* To Date Picker */}
-                <MenuItem
-                    disableRipple
-                    sx={{
-                        "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
-                        "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
-                        "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
-                        "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
-                    }}
-                >
-                    <DatePicker
-                        label="To"
-                        value={tempToDate}
-                        onChange={(newValue) => setTempToDate(newValue)} // Update tempToDate
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                size="small"
-                                fullWidth
-                                sx={{
-                                    marginBottom: '10px',
-                                }}
-                            />
-                        )}
-                    />
-                </MenuItem>
-
-                {/* Apply Button */}
-                <MenuItem
-                    disableRipple
-                    sx={{
-                        "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
-                        "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
-                        "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
-                        "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
-                    }}
-                    style={{ justifyContent: 'center', padding: '10px 0' }}
-                >   
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleApplyFilter}
-                        size="small"
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    {/* From Date Picker */}
+                    <MenuItem
+                        disableRipple
                         sx={{
-                            width: '100%',
+                            "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                            "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                            "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                            "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
                         }}
                     >
-                        Apply
-                    </Button>
-                </MenuItem>
-            </LocalizationProvider>
-            </Menu>
-        </div>
+                        <DatePicker
+                            label="From"
+                            value={tempFromDate}
+                            onChange={(newValue) => setTempFromDate(newValue)} // Update tempFromDate
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    size="small"
+                                    fullWidth
+                                    sx={{
+                                        marginBottom: '10px',
+                                    }}
+                                />
+                            )}
+                        />
+                    </MenuItem>
+
+                    {/* To Date Picker */}
+                    <MenuItem
+                        disableRipple
+                        sx={{
+                            "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                            "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                            "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                            "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
+                        }}
+                    >
+                        <DatePicker
+                            label="To"
+                            value={tempToDate}
+                            onChange={(newValue) => setTempToDate(newValue)} // Update tempToDate
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    size="small"
+                                    fullWidth
+                                    sx={{
+                                        marginBottom: '10px',
+                                    }}
+                                />
+                            )}
+                        />
+                    </MenuItem>
+
+                    {/* Apply Button */}
+                    <MenuItem
+                        disableRipple
+                        sx={{
+                            "&:hover": { backgroundColor: "transparent" }, // Remove grey on hover
+                            "&:focus": { backgroundColor: "transparent" }, // Remove grey on focus
+                            "&.Mui-selected": { backgroundColor: "transparent" }, // Remove grey when selected
+                            "&.Mui-selected:hover": { backgroundColor: "transparent" }, // Remove grey on selected hover
+                        }}
+                        style={{ justifyContent: 'center', padding: '10px 0' }}
+                    >   
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleApplyFilter}
+                            size="small"
+                            sx={{
+                                width: '100%',
+                            }}
+                        >
+                            Apply
+                        </Button>
+                    </MenuItem>
+                </LocalizationProvider>
+                </Menu>
+            </div>
 
 
             
-
+            {/* Top Cards */}
             <Grid
                 container
                 spacing={1}
@@ -678,79 +838,80 @@ const Incidents = () => {
                     marginBottom: '10px',
                 }}
             >
-    {dashboardItems.map((item, index) => (
-        <Grid
-            item
-            xs={12}
-            sm={6}
-            md={4}
-            lg={2}
-            key={index}
-            style={{ display: 'flex' }}
-        >
-            <Card
-                style={{
-                    display: 'flex', // Flexbox for horizontal alignment
-                    alignItems: 'center', // Align items vertically
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                    flex: 1,
-                    padding: '16px', // Add padding for inner spacing
-                }}
-            >
-                {/* Circular Icon */}
-                <div
-                    style={{
-                        width: '40px', // Width of the circular icon
-                        height: '40px', // Height of the circular icon
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '50%', // Makes the icon circular
-                        fontSize: '1.8rem', // Size of the icon
-                        marginRight: '16px', // Space between the icon and the text
-                        
-                        backgroundColor: item.color, // Set the color from the item
-                        color: 'white', // White icon color for contrast
-                    }}
+            {dashboardItems.map((item, index) => (
+                <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    lg={2}
+                    key={index}
+                    style={{ display: 'flex' }}
                 >
-                    {item.icon}
-                </div>
-
-                {/* Label and Value */}
-                <div style={{ flex: 1, textAlign: 'right', paddingRight: '10px' }}>
-                    {/* Label */}
-                    <Typography
-                        variant="h7"
+                    <Card
                         style={{
-                            // fontWeight: 'bold',
-                            color: 'grey', // Dim the color of the label
-                            textAlign: 'right', // Align label to the right
+                            display: 'flex', // Flexbox for horizontal alignment
+                            alignItems: 'center', // Align items vertically
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            flex: 1,
+                            padding: '16px', // Add padding for inner spacing
                         }}
                     >
-                        {item.label}
-                    </Typography>
+                        {/* Circular Icon */}
+                        <div
+                            style={{
+                                width: '40px', // Width of the circular icon
+                                height: '40px', // Height of the circular icon
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '50%', // Makes the icon circular
+                                fontSize: '1.8rem', // Size of the icon
+                                marginRight: '16px', // Space between the icon and the text
+                                
+                                backgroundColor: item.color, // Set the color from the item
+                                color: 'white', // White icon color for contrast
+                            }}
+                        >
+                            {item.icon}
+                        </div>
 
-                    {/* Value */}
-                    <Typography
-                        variant="h4"
-                        style={{
-                            fontWeight: 'bold',
-                            marginTop: '8px',
-                            textAlign: 'right', // Align value to the right
-                        }}
-                    >
-                        {item.value}
-                    </Typography>
-                </div>
-            </Card>
-        </Grid>
-    ))}
+                        {/* Label and Value */}
+                        <div style={{ flex: 1, textAlign: 'right', paddingRight: '10px' }}>
+                            {/* Label */}
+                            <Typography
+                                variant="h7"
+                                style={{
+                                    // fontWeight: 'bold',
+                                    color: 'grey', // Dim the color of the label
+                                    textAlign: 'right', // Align label to the right
+                                }}
+                            >
+                                {item.label}
+                            </Typography>
+
+                            {/* Value */}
+                            <Typography
+                                variant="h4"
+                                style={{
+                                    fontWeight: 'bold',
+                                    marginTop: '8px',
+                                    textAlign: 'right', // Align value to the right
+                                }}
+                            >
+                                {item.value}
+                            </Typography>
+                        </div>
+                    </Card>
+                </Grid>
+            ))}
             </Grid>
 
-
+            {/* Row 1 */}
             <Grid container spacing={1}> 
 
+                {/* left */}
                 <Grid item xs={12} sm={12} md={6}>
                     <div
                         style={{
@@ -771,7 +932,8 @@ const Incidents = () => {
                         </div>
                     </div>
                 </Grid>
-
+                
+                {}
                 <Grid item xs={12} sm={12} md={6}> 
                     <div
                         style={{
@@ -787,12 +949,13 @@ const Incidents = () => {
                             Incident Categories
                         </Typography>
                         <div style={{ height: '260px', width: '100%' }}>
-                            <Bar data={chartData} options={chartOptions} />
+                            <Bar data={stackedBarChartData} options={stackedBarChartOptions} />
                         </div>
                     </div>
                 </Grid>        
             </Grid>
-
+            
+            {/* Row 2 */}
             <Grid container spacing={1}> 
                 <Grid item xs={12} sm={12} md={6}>
                     <div
@@ -885,7 +1048,8 @@ const Incidents = () => {
 
                 </Grid> 
             </Grid>
-                    
+            
+            {/* Row 3 */}
             <Grid container spacing={2}>
 
                 {/* Table Section */}
@@ -976,7 +1140,7 @@ const Incidents = () => {
                 </Grid>
             </Grid>
 
-    </div>
+        </div>
     );
 };
 
