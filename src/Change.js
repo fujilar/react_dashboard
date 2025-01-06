@@ -58,6 +58,7 @@ const generateRandomIncidents = (count) => {
 
 const sampleIncidents = generateRandomIncidents(100);
 
+// chart 1.1.3
 // Group incidents by date for SLA Trends
 const groupIncidentsByDate = (incidents) => {
   const groupedData = {};
@@ -71,6 +72,7 @@ const groupIncidentsByDate = (incidents) => {
   return groupedData;
 };
 
+// chart 1.1.2
 // Prepare SLA Trends Data
 const prepareSLATrendData = (filteredIncidents, fromDate, toDate) => {
   const groupedData = groupIncidentsByDate(filteredIncidents);
@@ -94,8 +96,10 @@ const prepareSLATrendData = (filteredIncidents, fromDate, toDate) => {
         borderColor: "#2ecc71",
         backgroundColor: "#A3E4D7",
         fill: false,
-        pointRadius: 5,
-        tension: 0.4,
+        pointRadius: 2, // Smaller point radius
+        pointHoverRadius: 3, // Hover effect point size
+        borderWidth: 1, // Thinner line
+        tension: 0.2, // Smaller curve tension
       },
       {
         label: "SLA Not Met",
@@ -103,13 +107,16 @@ const prepareSLATrendData = (filteredIncidents, fromDate, toDate) => {
         borderColor: "#e74c3c",
         backgroundColor: "#F5B7B1",
         fill: false,
-        pointRadius: 5,
-        tension: 0.4,
+        pointRadius: 2, // Smaller point radius
+        pointHoverRadius: 3, // Hover effect point size
+        borderWidth: 1, // Thinner line
+        tension: 0.2, // Smaller curve tension
       },
     ],
   };
 };
 
+// chart 1.2.1
 const slaChartOptions = {
   responsive: true,
   maintainAspectRatio: false, // Allows the chart to resize dynamically
@@ -117,12 +124,18 @@ const slaChartOptions = {
       legend: {
           position: 'top',
       },
+      datalabels: {
+        display: false, // Disables data labels inside the chart
+      },
   },
   scales: {
       x: {
           title: {
               display: true,
               text: 'Date',
+          },
+          ticks: {
+            autoSkip: false, // Forces all dates to display
           },
       },
       y: {
@@ -135,31 +148,86 @@ const slaChartOptions = {
   },
 };
 
+// chart 2.2.1
+const stackedBarChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false, // Allows the chart to resize dynamically
+  indexAxis: "y",
+  plugins: {
+    legend: { position: "top" },
+    datalabels: {
+      anchor: "center",
+      align: "center",
+      color: "white",
+      formatter: (value) => (value > 0 ? `${value}%` : ""), // Show only if value > 0
+    },
+  },
+  scales: {
+    x: {
+      stacked: true,
+      title: { display: true, text: "Percentage (%)" },
+      min: 0, // Set minimum value to 0
+      max: 100, // Restrict x-axis to 100%
+    },
+    y: {
+      stacked: true,
+      title: { display: true, text: "Incident Categories" },
+    },
+  },
+};
+
+// chart 2.1.3
 // Group incidents by category and status
 const groupIncidentsByCategoryAndStatus = (incidents) => {
-    const groupedData = {};
-  
-    // Group incidents by category and status
-    incidents.forEach((incident) => {
-      if (!groupedData[incident.category]) {
-        groupedData[incident.category] = { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 };
-      }
-      groupedData[incident.category][incident.status]++;
-    });
-  
-    // Calculate percentages correctly per category
-    Object.keys(groupedData).forEach((category) => {
-      const total = Object.values(groupedData[category]).reduce((sum, val) => sum + val, 0);
-      Object.keys(groupedData[category]).forEach((status) => {
-        groupedData[category][status] = total > 0
-          ? parseFloat(((groupedData[category][status] / total) * 100).toFixed(1)) // Fix precision
-          : 0;
-      });
-    });
-  
-    return groupedData;
-  };
+  const groupedData = {};
 
+  // Group incidents by category and status
+  incidents.forEach((incident) => {
+    if (!groupedData[incident.category]) {
+      groupedData[incident.category] = { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 };
+    }
+    groupedData[incident.category][incident.status]++;
+  });
+
+  // Calculate percentages correctly per category with adjustment
+  Object.keys(groupedData).forEach((category) => {
+    const total = Object.values(groupedData[category]).reduce((sum, val) => sum + val, 0);
+
+    if (total > 0) {
+      const rawPercentages = {};
+      let roundedPercentages = {};
+      let totalRounded = 0;
+
+      // Step 1: Calculate raw percentages
+      Object.keys(groupedData[category]).forEach((status) => {
+        rawPercentages[status] = (groupedData[category][status] / total) * 100;
+      });
+
+      // Step 2: Round percentages and calculate the rounding difference
+      Object.keys(rawPercentages).forEach((status) => {
+        roundedPercentages[status] = Math.floor(rawPercentages[status]);
+        totalRounded += roundedPercentages[status];
+      });
+
+      // Step 3: Adjust residuals to make total equal 100
+      const residual = 100 - totalRounded;
+      const sortedStatuses = Object.keys(rawPercentages).sort(
+        (a, b) => rawPercentages[b] - rawPercentages[a]
+      );
+
+      for (let i = 0; i < residual; i++) {
+        roundedPercentages[sortedStatuses[i]]++;
+      }
+
+      groupedData[category] = roundedPercentages;
+    }
+  });
+
+  return groupedData;
+};
+
+
+// chart 2.1.2
 // Prepare Stacked Bar Chart Data
 const prepareStackedBarChartData = (filteredIncidents) => {
   const groupedData = groupIncidentsByCategoryAndStatus(filteredIncidents);
@@ -170,22 +238,22 @@ const prepareStackedBarChartData = (filteredIncidents) => {
       {
         label: "Open",
         data: Object.values(groupedData).map((category) => category.Open),
-        backgroundColor: "#3498db",
+        backgroundColor: "#e74c3c",
       },
       {
         label: "In Progress",
         data: Object.values(groupedData).map((category) => category["In Progress"]),
-        backgroundColor: "#1abc9c",
+        backgroundColor: "#f1c40f",
       },
       {
         label: "Closed",
         data: Object.values(groupedData).map((category) => category.Closed),
-        backgroundColor: "#2ecc71",
+        backgroundColor: "#95a5a6",
       },
       {
         label: "Unassigned",
         data: Object.values(groupedData).map((category) => category.Unassigned),
-        backgroundColor: "#f39c12",
+        backgroundColor: "#4B4B4B",
       },
     ],
   };
@@ -322,35 +390,13 @@ const SLAChart = () => {
     (incident) => incident.date >= fromDate && incident.date <= toDate
   );
 
+  // chart 1.1.1
   const slaTrendData = prepareSLATrendData(filteredIncidents, fromDate, toDate);
+
+  // chart 2.1.1
   const stackedBarChartData = prepareStackedBarChartData(filteredIncidents);
 
-  const stackedBarChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false, // Allows the chart to resize dynamically
-    indexAxis: "y",
-    plugins: {
-      legend: { position: "top" },
-      datalabels: {
-        anchor: "center",
-        align: "center",
-        color: "white",
-        formatter: (value) => (value > 0 ? `${value}%` : ""), // Show only if value > 0
-      },
-    },
-    scales: {
-      x: {
-        stacked: true,
-        title: { display: true, text: "Percentage (%)" },
-        min: 0, // Set minimum value to 0
-        max: 100, // Restrict x-axis to 100%
-      },
-      y: {
-        stacked: true,
-        title: { display: true, text: "Incident Categories" },
-      },
-    },
-  };
+  
 
   const groupedData = groupIncidentsByPriorityAndStatus(filteredIncidents);
   const priorityBarChartData = preparePriorityChartData(groupedData);
@@ -371,6 +417,8 @@ const unassignedCount = getUnassignedIncidentsCount(filteredIncidents);
 
   return (
     <div style={{ padding: "20px" }}>
+
+      {/* Title */}
       <Typography variant="h6" gutterBottom>
         SLA Trends & Incident Categories
       </Typography>
