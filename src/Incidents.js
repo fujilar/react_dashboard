@@ -293,29 +293,76 @@ const slaChartOptions = {
 };
 
 
-// Incident sample data
-const sampleData = [
-    { number: 1, opened: "2024-11-14", shortDescription: "Issue A", priority: "High", state: "Open", category: "Bug" },
-    { number: 2, opened: "2024-11-13", shortDescription: "Issue B", priority: "Medium", state: "In Progress", category: "Feature" },
-    { number: 3, opened: "2024-11-12", shortDescription: "Issue C", priority: "Low", state: "Resolved", category: "Enhancement" },
-    { number: 4, opened: "2024-11-11", shortDescription: "Issue D", priority: "High", state: "Closed", category: "Bug" },
-    { number: 5, opened: "2024-11-10", shortDescription: "Issue E", priority: "Low", state: "Open", category: "Maintenance" },
-    { number: 6, opened: "2024-11-09", shortDescription: "Issue F", priority: "Medium", state: "In Progress", category: "Bug" },
-    { number: 7, opened: "2024-11-08", shortDescription: "Issue G", priority: "High", state: "Closed", category: "Feature" },
-    { number: 8, opened: "2024-11-07", shortDescription: "Issue H", priority: "Low", state: "Resolved", category: "Enhancement" },
-    { number: 9, opened: "2024-11-06", shortDescription: "Issue I", priority: "Medium", state: "Open", category: "Bug" },
-    { number: 10, opened: "2024-11-05", shortDescription: "Issue J", priority: "High", state: "In Progress", category: "Feature" },
-    { number: 11, opened: "2024-11-04", shortDescription: "Issue K", priority: "Low", state: "Resolved", category: "Bug" },
-    { number: 12, opened: "2024-11-03", shortDescription: "Issue L", priority: "Medium", state: "Closed", category: "Enhancement" },
-    { number: 13, opened: "2024-11-02", shortDescription: "Issue M", priority: "High", state: "Open", category: "Feature" },
-    { number: 14, opened: "2024-11-01", shortDescription: "Issue N", priority: "Low", state: "In Progress", category: "Bug" },
-    { number: 15, opened: "2024-10-31", shortDescription: "Issue O", priority: "Medium", state: "Closed", category: "Feature" },
-    { number: 16, opened: "2024-10-30", shortDescription: "Issue P", priority: "High", state: "Resolved", category: "Enhancement" },
-    { number: 17, opened: "2024-10-29", shortDescription: "Issue Q", priority: "Low", state: "Open", category: "Bug" },
-    { number: 18, opened: "2024-10-28", shortDescription: "Issue R", priority: "Medium", state: "In Progress", category: "Feature" },
-    { number: 19, opened: "2024-10-27", shortDescription: "Issue S", priority: "High", state: "Closed", category: "Enhancement" },
-    { number: 20, opened: "2024-10-26", shortDescription: "Issue T", priority: "Low", state: "Resolved", category: "Bug" },
-];
+// // Incident sample data
+// const sampleData = [
+//     { number: 1, opened: "2024-11-14", shortDescription: "Issue A", priority: "High", state: "Open", category: "Bug" },
+//     { number: 2, opened: "2024-11-13", shortDescription: "Issue B", priority: "Medium", state: "In Progress", category: "Feature" },
+//     { number: 3, opened: "2024-11-12", shortDescription: "Issue C", priority: "Low", state: "Resolved", category: "Enhancement" },
+//     { number: 4, opened: "2024-11-11", shortDescription: "Issue D", priority: "High", state: "Closed", category: "Bug" },
+//     { number: 5, opened: "2024-11-10", shortDescription: "Issue E", priority: "Low", state: "Open", category: "Maintenance" },
+//     { number: 6, opened: "2024-11-09", shortDescription: "Issue F", priority: "Medium", state: "In Progress", category: "Bug" },
+//     { number: 7, opened: "2024-11-08", shortDescription: "Issue G", priority: "High", state: "Closed", category: "Feature" },
+//     { number: 8, opened: "2024-11-07", shortDescription: "Issue H", priority: "Low", state: "Resolved", category: "Enhancement" },
+//     { number: 9, opened: "2024-11-06", shortDescription: "Issue I", priority: "Medium", state: "Open", category: "Bug" },
+//     { number: 10, opened: "2024-11-05", shortDescription: "Issue J", priority: "High", state: "In Progress", category: "Feature" },
+//     { number: 11, opened: "2024-11-04", shortDescription: "Issue K", priority: "Low", state: "Resolved", category: "Bug" },
+//     { number: 12, opened: "2024-11-03", shortDescription: "Issue L", priority: "Medium", state: "Closed", category: "Enhancement" },
+//     { number: 13, opened: "2024-11-02", shortDescription: "Issue M", priority: "High", state: "Open", category: "Feature" },
+//     { number: 14, opened: "2024-11-01", shortDescription: "Issue N", priority: "Low", state: "In Progress", category: "Bug" },
+//     { number: 15, opened: "2024-10-31", shortDescription: "Issue O", priority: "Medium", state: "Closed", category: "Feature" },
+//     { number: 16, opened: "2024-10-30", shortDescription: "Issue P", priority: "High", state: "Resolved", category: "Enhancement" },
+//     { number: 17, opened: "2024-10-29", shortDescription: "Issue Q", priority: "Low", state: "Open", category: "Bug" },
+//     { number: 18, opened: "2024-10-28", shortDescription: "Issue R", priority: "Medium", state: "In Progress", category: "Feature" },
+//     { number: 19, opened: "2024-10-27", shortDescription: "Issue S", priority: "High", state: "Closed", category: "Enhancement" },
+//     { number: 20, opened: "2024-10-26", shortDescription: "Issue T", priority: "Low", state: "Resolved", category: "Bug" },
+// ];
+
+// Function to generate random incident data
+const generateTableRandomIncidents = (count) => {
+    const incidents = [];
+    const states = ["Open", "In Progress", "Resolved", "Closed"];
+    const categories = ["Bug", "Feature", "Enhancement", "Maintenance"];
+    const priorities = ["High", "Medium", "Low", "Critical", "Planning"];
+    const descriptions = [
+        "Network issue",
+        "Server crash",
+        "UI bug",
+        "Database error",
+        "API timeout",
+        "Feature request",
+        "Code optimization",
+        "System maintenance",
+    ];
+    
+    // Function to generate an ID in the format INC0012235
+    const generateIncidentID = (index) => {
+        const prefix = "INC"; // Fixed prefix
+        const paddedIndex = String(index).padStart(7, "0"); // Pad index with 7 digits
+        return `${prefix}${paddedIndex}`; // Combine prefix and padded index
+    };
+
+    for (let i = 1; i <= count; i++) {
+        const randomDays = Math.floor(Math.random() * 30); // Random number of days ago
+        const randomState = states[Math.floor(Math.random() * states.length)];
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        const randomPriority = priorities[Math.floor(Math.random() * priorities.length)];
+        const randomDescription = descriptions[Math.floor(Math.random() * descriptions.length)];
+
+        incidents.push({
+            number: generateIncidentID(i),
+            opened: subDays(new Date(), randomDays).toISOString().split("T")[0], // Format date as YYYY-MM-DD
+            shortDescription: randomDescription,
+            priority: randomPriority,
+            state: randomState,
+            category: randomCategory,
+        });
+    }
+
+    return incidents;
+};
+
+// Generate 20 random incidents
+const sampleData = generateTableRandomIncidents(20);
 
 // chart 2.2.1
 const stackedBarChartOptions = {
@@ -1382,7 +1429,7 @@ const Incidents = () => {
                                 ))}
                             </TableBody>
                         </Table>
-                        </TableContainer>;
+                        </TableContainer>
 
                     {/* Pagination */}
                     <TablePagination
