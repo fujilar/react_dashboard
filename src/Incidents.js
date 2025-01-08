@@ -92,36 +92,61 @@ ChartJS.register(LineElement, PointElement, BarElement, CategoryScale, LinearSca
 // Generate random incidents
 const generateRandomIncidents = (count) => {
     const incidents = [];
-    const statuses = ["Open", "In Progress", "Closed", "Unassigned", "On Hold", "Resolved"];
+    const states = ["Open", "In Progress", "Closed", "Unassigned", "On Hold", "Resolved"];
     const categories = ["Database", "Hardware", "Inquiry", "Network", "Software", "Null"];
     const slaOptions = ["Met", "NotMet"];
     const priorities = ["Critical", "High", "Moderate", "Low", "Planning"]; // Added priority levels
-  
+    const descriptions = [
+        "Network issue",
+        "Server crash",
+        "UI bug",
+        "Database error",
+        "API timeout",
+        "Feature request",
+        "Code optimization",
+        "System maintenance",
+    ];
+
+    // Function to generate an ID in the format INC0012235
+    const generateIncidentID = (index) => {
+        const prefix = "INC"; // Fixed prefix
+        const paddedIndex = String(index).padStart(7, "0"); // Pad index with 7 digits
+        return `${prefix}${paddedIndex}`; // Combine prefix and padded index
+    };
+
     for (let i = 1; i <= count; i++) {
-      // Generate random days, with a 20% chance of being more than 30 days
-      const randomDays = Math.random() < 0.8 
+
+        // Generate random days, with a 20% chance of being more than 30 days
+        const randomDays = Math.random() < 0.8 
         ? Math.floor(Math.random() * 30)  // 80% chance: within 30 days
         : Math.floor(Math.random() * 30) + 31; // 20% chance: more than 30 days
-  
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-      const randomSLA = slaOptions[Math.floor(Math.random() * slaOptions.length)];
-      const randomPriority = priorities[Math.floor(Math.random() * priorities.length)]; // Added priority levels
-      incidents.push({
-        id: i,
-        status: randomStatus,
-        category: randomCategory,
-        sla: randomSLA,
-        priority: randomPriority, // Added priority levels
-        date: subDays(new Date(), randomDays),
-        lastUpdated: subDays(new Date(), randomDays), // Random last updated date
-      });
+
+        const randomState = states[Math.floor(Math.random() * states.length)];
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        const randomSLA = slaOptions[Math.floor(Math.random() * slaOptions.length)];
+        const randomPriority = priorities[Math.floor(Math.random() * priorities.length)]; // Added priority levels
+        const randomDescription = descriptions[Math.floor(Math.random() * descriptions.length)];
+
+            incidents.push({
+            id: i,
+            number: generateIncidentID(i),
+            state: randomState,
+            category: randomCategory,
+            sla: randomSLA,
+            priority: randomPriority, // Added priority levels
+            date: subDays(new Date(), randomDays),
+            lastUpdated: subDays(new Date(), randomDays), // Random last updated date
+            opened: subDays(new Date(), randomDays), // Random opened date
+            shortDescription: randomDescription,
+            });
     }
     return incidents;
-  };
-  
-  
-  const sampleIncidents = generateRandomIncidents(100);
+};
+
+
+const sampleIncidents = generateRandomIncidents(100);
+
+console.log("sample", sampleIncidents);
 
 const groupIncidentsByMonth = (incidents) => {
     const groupedData = {};
@@ -168,7 +193,7 @@ const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
               return dateRange;
           })();
 
-    // Populate data for each SLA status
+    // Populate data for each SLA state
     const metCounts = labels.map((key) => groupedData[key]?.Met || 0);
     const notMetCounts = labels.map((key) => groupedData[key]?.NotMet || 0);
 
@@ -236,7 +261,7 @@ const filterTopCards = (incidents, filter, fromDate, toDate) => {
     }
 };
 
-
+// not in use already
 // Chart options
 const chartOptions = {
     responsive: true,
@@ -292,8 +317,8 @@ const slaChartOptions = {
     },
 };
 
-
-// // Incident sample data
+// not in use
+// Incident sample data
 // const sampleData = [
 //     { number: 1, opened: "2024-11-14", shortDescription: "Issue A", priority: "High", state: "Open", category: "Bug" },
 //     { number: 2, opened: "2024-11-13", shortDescription: "Issue B", priority: "Medium", state: "In Progress", category: "Feature" },
@@ -361,6 +386,7 @@ const generateTableRandomIncidents = (count) => {
     return incidents;
 };
 
+// not in use
 // Generate 20 random incidents
 const sampleData = generateTableRandomIncidents(20);
 
@@ -393,16 +419,16 @@ const stackedBarChartOptions = {
 };
 
 // chart 2.1.3
-// Group incidents by category and status
+// Group incidents by category and state
 const groupIncidentsByCategoryAndStatus = (incidents) => {
     const groupedData = {};
 
-    // Group incidents by category and status
+    // Group incidents by category and state
     incidents.forEach((incident) => {
         if (!groupedData[incident.category]) {
         groupedData[incident.category] = { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 };
         }
-        groupedData[incident.category][incident.status]++;
+        groupedData[incident.category][incident.state]++;
     });
 
     // Calculate percentages correctly per category with adjustment
@@ -415,24 +441,24 @@ const groupIncidentsByCategoryAndStatus = (incidents) => {
         let totalRounded = 0;
 
         // Step 1: Calculate raw percentages
-        Object.keys(groupedData[category]).forEach((status) => {
-            rawPercentages[status] = (groupedData[category][status] / total) * 100;
+        Object.keys(groupedData[category]).forEach((state) => {
+            rawPercentages[state] = (groupedData[category][state] / total) * 100;
         });
 
         // Step 2: Round percentages and calculate the rounding difference
-        Object.keys(rawPercentages).forEach((status) => {
-            roundedPercentages[status] = Math.floor(rawPercentages[status]);
-            totalRounded += roundedPercentages[status];
+        Object.keys(rawPercentages).forEach((state) => {
+            roundedPercentages[state] = Math.floor(rawPercentages[state]);
+            totalRounded += roundedPercentages[state];
         });
 
         // Step 3: Adjust residuals to make total equal 100
         const residual = 100 - totalRounded;
-        const sortedStatuses = Object.keys(rawPercentages).sort(
+        const sortedstate = Object.keys(rawPercentages).sort(
             (a, b) => rawPercentages[b] - rawPercentages[a]
         );
 
         for (let i = 0; i < residual; i++) {
-            roundedPercentages[sortedStatuses[i]]++;
+            roundedPercentages[sortedstate[i]]++;
         }
 
         groupedData[category] = roundedPercentages;
@@ -448,7 +474,7 @@ const groupIncidentsByCategoryAndStatus = (incidents) => {
 const prepareStackedBarChartData = (filteredIncidents) => {
     // Exclude "On Hold" and "Resolved" from the incident categories
     const filteredCategories = filteredIncidents.filter(
-        (incident) => incident.status !== "On Hold" && incident.status !== "Resolved"
+        (incident) => incident.state !== "On Hold" && incident.state !== "Resolved"
     );
 
     const groupedData = groupIncidentsByCategoryAndStatus(filteredCategories);
@@ -490,11 +516,18 @@ const Incidents = () => {
 
     // Top card
     // Filtered top cards
-    const filteredTopCards = filterTopCards(sampleIncidents, filter, fromDate, toDate);
+    const currentYearStart = new Date(new Date().getFullYear(), 0, 1); // Start of the current year
+    const filteredTopCards =
+    filter === "Custom" && fromDate && toDate
+        ? sampleIncidents.filter(
+              (incident) =>
+                  incident.date >= fromDate && incident.date <= toDate
+          )
+        : sampleIncidents.filter((incident) => incident.date >= currentYearStart);
 
     // data table state
     const [rows, setRows] = useState(sampleData); // Full data
-    const [filteredRows, setFilteredRows] = useState(sampleData); // Filtered data
+    const [filteredRows, setFilteredRows] = useState(sampleIncidents); // Filtered data
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [searchText, setSearchText] = useState("");
@@ -502,15 +535,17 @@ const Incidents = () => {
 
     const [customRange, setCustomRange] = useState('Please select a date range'); // Custom date range
     
+    const [filteredData, setFilteredData] = useState(sampleIncidents); // Shared filtered data
+
     // Top card
-    // Assigned colour for different incident statuses
+    // Assigned colour for different incident state
     const dashboardItems = [
         { label: 'Total', value: filteredTopCards.length, color: '#2196f3', icon: <AssignmentIcon /> },
-        { label: 'Open', value: filteredTopCards.filter(incident => incident.status === 'Open').length, color: '#f44336', icon: <InboxIcon /> },
-        { label: 'In Progress', value: filteredTopCards.filter(incident => incident.status === 'In Progress').length, color: '#ff9800', icon: <AutorenewIcon /> },
-        { label: 'On Hold', value: filteredTopCards.filter(incident => incident.status === 'On Hold').length, color: '#9c27b0', icon: <PauseCircleFilledIcon /> },
-        { label: 'Resolved', value: filteredTopCards.filter(incident => incident.status === 'Resolved').length, color: '#4caf50', icon: <CheckCircleIcon /> },
-        { label: 'Closed', value: filteredTopCards.filter(incident => incident.status === 'Closed').length, color: '#607d8b', icon: <DoneAllIcon /> },
+        { label: 'Open', value: filteredTopCards.filter(incident => incident.state === 'Open').length, color: '#f44336', icon: <InboxIcon /> },
+        { label: 'In Progress', value: filteredTopCards.filter(incident => incident.state === 'In Progress').length, color: '#ff9800', icon: <AutorenewIcon /> },
+        { label: 'On Hold', value: filteredTopCards.filter(incident => incident.state === 'On Hold').length, color: '#9c27b0', icon: <PauseCircleFilledIcon /> },
+        { label: 'Resolved', value: filteredTopCards.filter(incident => incident.state === 'Resolved').length, color: '#4caf50', icon: <CheckCircleIcon /> },
+        { label: 'Closed', value: filteredTopCards.filter(incident => incident.state === 'Closed').length, color: '#607d8b', icon: <DoneAllIcon /> },
     ];
 
     const handleFilterChange = (selectedFilter) => {
@@ -518,31 +553,63 @@ const Incidents = () => {
 
         // Adjust date ranges based on the filter
         const today = new Date();
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        let filtered;
+
         switch (selectedFilter) {
             case 'Today':
-                setFromDate(today);
-                setToDate(today);
+                filtered = sampleIncidents.filter(
+                (incident) => incident.date.toDateString() === now.toDateString()
+                );
+                setFromDate(now);
+                setToDate(now);
                 break;
             case '7 Days':
-                setFromDate(subDays(today, 7));
-                setToDate(today);
+                const startOfLast7Days = new Date();
+                startOfLast7Days.setHours(0, 0, 0, 0); // Start of the current day
+                const last7DaysStart = subDays(startOfLast7Days, 6); // Subtract 6 days for a full 7-day range
+
+                filtered = sampleIncidents.filter(
+                    (incident) =>
+                        incident.date >= last7DaysStart && incident.date <= now
+                );
+
+                setFromDate(last7DaysStart); // Set the start date for the 7-day range
+                setToDate(now); // Set the current date as the end of the range
                 break;
             case 'Month':
-                setFromDate(new Date(today.getFullYear(), today.getMonth(), 1));
-                setToDate(today);
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1); // First day of the current month
+                filtered = sampleIncidents.filter(
+                    (incident) => incident.date >= startOfMonth && incident.date <= now
+                );
+                setFromDate(startOfMonth);
+                setToDate(now);
                 break;
             case 'Year':
                 setFromDate(new Date(today.getFullYear(), 0, 1));
                 setToDate(today);
                 break;
             case 'Custom':
-                // Custom filter uses temporary date pickers
+                if (fromDate && toDate) {
+                    filtered = sampleIncidents.filter(
+                        (incident) =>
+                            incident.date >= fromDate && incident.date <= toDate
+                    );
+                    setFilteredData(filtered); // Update the data for charts and table
+                } else {
+                    alert("Please select both 'From' and 'To' dates to apply the filter.");
+                    return;
+                }
                 break;
             default:
-                // Default to All incidents
+                // Default to show all incidents
+                filtered = sampleIncidents;
                 setFromDate(new Date('2000-01-01')); // Arbitrary past date
                 setToDate(today);
         }
+
+        setFilteredData(filtered); // Update the shared filtered data
     };
 
     // Chart Data Preparation
@@ -568,13 +635,13 @@ const Incidents = () => {
         const direction = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
         setSortConfig({ key, direction });
 
-        const sortedData = [...filteredRows].sort((a, b) => {
+        const sortedData = [...filteredData].sort((a, b) => {
             if (a[key] < b[key]) return direction === "asc" ? -1 : 1;
             if (a[key] > b[key]) return direction === "asc" ? 1 : -1;
             return 0;
         });
     
-        setFilteredRows(sortedData);
+        setFilteredData(sortedData);
     };
 
     // Handle Pagination
@@ -592,13 +659,13 @@ const Incidents = () => {
         const value = e.target.value.toLowerCase(); // Normalize search term to lowercase
         setSearchText(value);
 
-        const filtered = rows.filter((row) =>
+        const filtered = sampleIncidents.filter((row) =>
             Object.values(row).some((field) =>
                 field.toString().toLowerCase().includes(value) // Normalize fields to lowercase and check for inclusion
             )
         );
 
-        setFilteredRows(filtered);
+        setFilteredData(filtered);
     };
 
     const today = new Date(); // Format today's date
@@ -622,21 +689,11 @@ const Incidents = () => {
                     ? `${format(fromDate, 'dd MMM yyyy')} - ${format(toDate, 'dd MMM yyyy')}`
                     : 'Please select a date range';
             case 'All':
-                const slaDates = sampleIncidents
-                    .filter(incident => incident.sla) // Filter only incidents with SLA information
-                    .map(incident => incident.date); // Extract their dates
-    
-                if (slaDates.length === 0) {
-                    // If no incidents with SLA exist
-                    return `No SLA data available`;
-                }
-    
-                const earliestDate = new Date(Math.min(...slaDates)); // Find the earliest SLA date
-                const currentDate = today; // Current date for the range
-    
-                return `${format(earliestDate, 'dd MMM yyyy')} - ${format(currentDate, 'dd MMM yyyy')}`;
+                const startOfYear = new Date(today.getFullYear(), 0, 1);
+                return `${format(startOfYear, "dd MMM yyyy")} - ${format(today, "dd MMM yyyy")}`;
+
             default:
-                return `${format(yearStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
+                return 'All Dates';
         }
     };
     
@@ -651,14 +708,24 @@ const Incidents = () => {
 
     const handleApplyFilter = () => {
         if (tempFromDate && tempToDate) {
-            setFromDate(tempFromDate); // Apply the temporary date
-            setToDate(tempToDate); // Apply the temporary date
-            setCustomRange(`${tempFromDate.toLocaleDateString()} - ${tempToDate.toLocaleDateString()}`);
-            setFilter('Custom');
+            setFromDate(tempFromDate);
+            setToDate(tempToDate);
+    
+            // Update the filtered data
+            const filtered = sampleIncidents.filter(
+                (incident) =>
+                    incident.date >= tempFromDate &&
+                    incident.date <= tempToDate
+            );
+    
+            setFilteredData(filtered); // Update shared filtered data for charts and table
+            setCustomRange(`${format(tempFromDate, "dd MMM yyyy")} - ${format(tempToDate, "dd MMM yyyy")}`);
+            setFilter("Custom");
         } else {
             alert("Please select both 'From' and 'To' dates to apply the filter.");
         }
-        setAnchorEl(null); // Close dropdown after applying filter
+    
+        setAnchorEl(null); // Close dropdown
     };
     
     // sla filtered date
@@ -700,7 +767,7 @@ const Incidents = () => {
     
         incidents.forEach((incident) => {
         if (groupedData[incident.priority]) {
-            groupedData[incident.priority][incident.status]++;
+            groupedData[incident.priority][incident.state]++;
         }
         });
         return groupedData;
@@ -785,14 +852,14 @@ const Incidents = () => {
     // function for Overdue Incidents
     const openIncidentsMoreThan30Days = sampleIncidents.filter(
     (incident) => 
-        incident.status !== "Closed" && 
+        incident.state !== "Closed" && 
         incident.date <= subDays(new Date(), 30)
     ).length;
 
     // card 3.2
     // Filter for Unassigned Incidents
     const getUnassignedIncidentsCount = (incidents) => {
-    return incidents.filter((incident) => incident.status === "Unassigned").length;
+    return incidents.filter((incident) => incident.state === "Unassigned").length;
     };
 
     // card 3.1
@@ -1141,7 +1208,7 @@ const Incidents = () => {
                             marginBottom: '10px',
                         }}
                     >
-                        <Typography variant="subtitle1">Incident Grouped (Priority Status)</Typography>
+                        <Typography variant="subtitle1">Incident Grouped (Priority and Status)</Typography>
                         <div style={{ height: '260px', width: '100%' }}>
                             <Bar data={priorityBarChartData} options={priorityBarChartOptions} />
                         </div>
@@ -1369,7 +1436,7 @@ const Incidents = () => {
                     >
                     {/* Table Title */}
                     <Typography variant="h5" gutterBottom>
-                        Data Table with Sorting and Search
+                        Incidents
                     </Typography>
 
                     {/* Search Bar */}
@@ -1415,12 +1482,12 @@ const Incidents = () => {
                             </TableRow>
                             </TableHead>
                             <TableBody>
-                            {filteredRows
+                            {filteredData
                                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                 .map((row) => (
                                 <TableRow key={row.number}>
                                     <TableCell>{row.number}</TableCell>
-                                    <TableCell>{row.opened}</TableCell>
+                                    <TableCell>{new Date(row.opened).toLocaleDateString('en-US')}</TableCell>
                                     <TableCell>{row.shortDescription}</TableCell>
                                     <TableCell>{row.priority}</TableCell>
                                     <TableCell>{row.state}</TableCell>
@@ -1435,7 +1502,7 @@ const Incidents = () => {
                     <TablePagination
                         rowsPerPageOptions={[5, 10, 15]}
                         component="div"
-                        count={filteredRows.length}
+                        count={filteredData.length}
                         rowsPerPage={rowsPerPage}
                         page={page}
                         onPageChange={handleChangePage}
