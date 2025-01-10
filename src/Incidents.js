@@ -176,9 +176,19 @@ const groupIncidentsByDate = (incidents) => {
 
 // Prepare chart data
 const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
+    const now = new Date();
+    const currentYearStart = new Date(now.getFullYear(), 0, 1);
+
+    // If "All" filter is applied, restrict to current year
+    const incidentsForChart = isAllFilter
+        ? filteredIncidents.filter((incident) => incident.date >= currentYearStart)
+        : filteredIncidents.filter(
+              (incident) => incident.date >= fromDate && incident.date <= toDate
+          );
+
     const groupedData = isAllFilter
-        ? groupIncidentsByMonth(filteredIncidents)
-        : groupIncidentsByDate(filteredIncidents);
+        ? groupIncidentsByMonth(incidentsForChart)
+        : groupIncidentsByDate(incidentsForChart);
 
     // Generate x-axis labels based on the filter type
     const labels = isAllFilter
@@ -187,7 +197,7 @@ const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
               const dateRange = [];
               let currentDate = new Date(fromDate);
               while (currentDate <= toDate) {
-                  dateRange.push(format(currentDate, 'yyyy-MM-dd'));
+                  dateRange.push(format(currentDate, "yyyy-MM-dd"));
                   currentDate.setDate(currentDate.getDate() + 1);
               }
               return dateRange;
@@ -205,36 +215,39 @@ const prepareChartData = (filteredIncidents, fromDate, toDate, isAllFilter) => {
         labels,
         datasets: [
             {
-                label: `SLA Met`, // Add total count to the label
+                label: `SLA Met (${totalMet})`, // Add total count to the label
                 data: metCounts,
-                borderColor: '#2ecc71', // Modern emerald green
-                backgroundColor: '#A3E4D7', // Soft light aqua green
+                borderColor: "#2ecc71",
+                backgroundColor: "#A3E4D7",
                 fill: false,
-                pointRadius: 2, // Smaller point radius
-                pointHoverRadius: 3, // Hover effect point size
-                borderWidth: 1, // Thinner line
-                tension: 0.2, // Smaller curve tension
+                pointRadius: 2,
+                pointHoverRadius: 3,
+                borderWidth: 1,
+                tension: 0.2,
             },
             {
-                label: `SLA Not Met`, // Add total count to the label
+                label: `SLA Not Met (${totalNotMet})`, // Add total count to the label
                 data: notMetCounts,
-                borderColor: '#e74c3c', // Modern soft red
-                backgroundColor: '#F5B7B1', // Soft light pink
+                borderColor: "#e74c3c",
+                backgroundColor: "#F5B7B1",
                 fill: false,
-                pointRadius: 2, // Smaller point radius
-                pointHoverRadius: 3, // Hover effect point size
-                borderWidth: 1, // Thinner line
-                tension: 0.2, // Smaller curve tension
+                pointRadius: 2,
+                pointHoverRadius: 3,
+                borderWidth: 1,
+                tension: 0.2,
             },
         ],
     };
 };
 
 
+
 // Top card filter
 // Utility function to filter incidents based on the selected filter
 const filterTopCards = (incidents, filter, fromDate, toDate) => {
     const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1); // Start of the current year
+
     switch (filter) {
         case 'Today':
             return incidents.filter(incident => incident.date.toDateString() === now.toDateString());
@@ -256,8 +269,9 @@ const filterTopCards = (incidents, filter, fromDate, toDate) => {
                 );
             }
             return []; // No filtering if dates are not set
-        default:
-            return incidents;
+        case 'All':
+            default:
+                return incidents.filter((incident) => incident.date >= startOfYear);
     }
 };
 
@@ -294,10 +308,30 @@ const slaChartOptions = {
     maintainAspectRatio: false, // Allows the chart to resize dynamically
     plugins: {
         legend: {
-            position: 'top',
+            position: 'top', // Position of the legend
+            labels: {
+                boxWidth: 12, // Adjusts the size of the color boxes
+                boxHeight: 12, // Adjusts the height of the color boxes (Chart.js v4+)
+                font: {
+                    size: 10, // Adjusts the font size of the legend text
+                    weight: 'normal', // Adjusts font weight (e.g., 'bold', 'normal')
+                },
+                padding: 10, // Adjusts spacing around the legend items
+                // usePointStyle: true, // Use a circle instead of a square for the legend box
+            },
         },
         datalabels: {
             display: false, // Disables data labels inside the chart
+        },
+        tooltip: {
+            callbacks: {
+                label: function (context) {
+                    // Display the label without the total count
+                    const datasetLabel = context.dataset.label.split('(')[0].trim(); // Remove total count
+                    const value = context.raw; // Get the point value
+                    return `${datasetLabel}: ${value}`; // Display only the label and value
+                },
+            },
         },
     },
     scales: {
@@ -396,24 +430,36 @@ const stackedBarChartOptions = {
     maintainAspectRatio: false, // Allows the chart to resize dynamically
     indexAxis: "y",
     plugins: {
-        legend: { position: "top" },
+        legend: {
+            position: 'top', // Position of the legend
+            labels: {
+                boxWidth: 12, // Adjusts the size of the color boxes
+                boxHeight: 12, // Adjusts the height of the color boxes (Chart.js v4+)
+                font: {
+                    size: 10, // Adjusts the font size of the legend text
+                    weight: 'normal', // Adjusts font weight (e.g., 'bold', 'normal')
+                },
+                padding: 10, // Adjusts spacing around the legend items
+                // usePointStyle: true, // Use a circle instead of a square for the legend box
+            },
+        },
         datalabels: {
-        anchor: "center",
-        align: "center",
-        color: "white",
-        formatter: (value) => (value > 0 ? `${value}%` : ""), // Show only if value > 0
+            anchor: "center",
+            align: "center",
+            color: "white",
+            formatter: (value) => (value > 0 ? `${value}%` : ""), // Show only if value > 0
         },
     },
     scales: {
         x: {
-        stacked: true,
-        title: { display: true, text: "Percentage (%)" },
-        min: 0, // Set minimum value to 0
-        max: 100, // Restrict x-axis to 100%
+            stacked: true,
+            title: { display: true, text: "Percentage (%)" },
+            min: 0, // Set minimum value to 0
+            max: 100, // Restrict x-axis to 100%
         },
         y: {
-        stacked: true,
-        title: { display: true, text: "Incident Categories" },
+            stacked: true,
+            title: { display: true, text: "Incident Categories" },
         },
     },
 };
@@ -426,10 +472,11 @@ const groupIncidentsByCategoryAndStatus = (incidents) => {
     // Group incidents by category and state
     incidents.forEach((incident) => {
         if (!groupedData[incident.category]) {
-        groupedData[incident.category] = { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 };
+        groupedData[incident.category] = { Open: 0, "In Progress": 0, "On Hold": 0, Resolved: 0, Closed: 0, Unassigned: 0 };
         }
         groupedData[incident.category][incident.state]++;
     });
+    
 
     // Calculate percentages correctly per category with adjustment
     Object.keys(groupedData).forEach((category) => {
@@ -471,40 +518,58 @@ const groupIncidentsByCategoryAndStatus = (incidents) => {
 
 // chart 2.1.2
 // Prepare Stacked Bar Chart Data
-const prepareStackedBarChartData = (filteredIncidents) => {
-    // Exclude "On Hold" and "Resolved" from the incident categories
-    const filteredCategories = filteredIncidents.filter(
-        (incident) => incident.state !== "On Hold" && incident.state !== "Resolved"
-    );
+const prepareStackedBarChartData = (filteredIncidents, filter) => {
+    // Filter incidents to include only this year for "All" filter
+    const now = new Date();
+    const currentYearStart = new Date(now.getFullYear(), 0, 1);
+
+    const filteredCategories =
+        filter === 'All'
+            ? filteredIncidents.filter(
+                  (incident) =>
+                      incident.date >= currentYearStart // No exclusion for "On Hold" and "Resolved"
+              )
+            : filteredIncidents;
 
     const groupedData = groupIncidentsByCategoryAndStatus(filteredCategories);
 
     return {
         labels: Object.keys(groupedData),
         datasets: [
-        {
-            label: "Open",
-            data: Object.values(groupedData).map((category) => category.Open),
-            backgroundColor: "#e74c3c",
-        },
-        {
-            label: "In Progress",
-            data: Object.values(groupedData).map((category) => category["In Progress"]),
-            backgroundColor: "#f1c40f",
-        },
-        {
-            label: "Closed",
-            data: Object.values(groupedData).map((category) => category.Closed),
-            backgroundColor: "#95a5a6",
-        },
-        {
-            label: "Unassigned",
-            data: Object.values(groupedData).map((category) => category.Unassigned),
-            backgroundColor: "#4B4B4B",
-        },
+            {
+                label: "Open",
+                data: Object.values(groupedData).map((category) => category.Open),
+                backgroundColor: "#e74c3c",
+            },
+            {
+                label: "In Progress",
+                data: Object.values(groupedData).map((category) => category["In Progress"]),
+                backgroundColor: "#f1c40f",
+            },
+            {
+                label: "On Hold",
+                data: Object.values(groupedData).map((category) => category["On Hold"] || 0),
+                backgroundColor: "#9c27b0",
+            },
+            {
+                label: "Resolved",
+                data: Object.values(groupedData).map((category) => category.Resolved || 0),
+                backgroundColor: "#4caf50",
+            },
+            {
+                label: "Closed",
+                data: Object.values(groupedData).map((category) => category.Closed),
+                backgroundColor: "#95a5a6",
+            },
+            {
+                label: "Unassigned",
+                data: Object.values(groupedData).map((category) => category.Unassigned),
+                backgroundColor: "#4B4B4B",
+            },
         ],
     };
 };
+
 const Incidents = () => {
     // filter incidents state
     const [filter, setFilter] = useState('All');
@@ -517,13 +582,15 @@ const Incidents = () => {
     // Top card
     // Filtered top cards
     const currentYearStart = new Date(new Date().getFullYear(), 0, 1); // Start of the current year
-    const filteredTopCards =
-    filter === "Custom" && fromDate && toDate
-        ? sampleIncidents.filter(
-              (incident) =>
-                  incident.date >= fromDate && incident.date <= toDate
-          )
-        : sampleIncidents.filter((incident) => incident.date >= currentYearStart);
+    // const filteredTopCards =
+    // filter === "Custom" && fromDate && toDate
+    //     ? sampleIncidents.filter(
+    //           (incident) =>
+    //               incident.date >= fromDate && incident.date <= toDate
+    //       )
+    //     : sampleIncidents.filter((incident) => incident.date >= currentYearStart);
+
+    const filteredTopCards = filterTopCards(sampleIncidents, filter, fromDate, toDate);
 
     // data table state
     const [rows, setRows] = useState(sampleData); // Full data
@@ -535,7 +602,11 @@ const Incidents = () => {
 
     const [customRange, setCustomRange] = useState('Please select a date range'); // Custom date range
     
-    const [filteredData, setFilteredData] = useState(sampleIncidents); // Shared filtered data
+    // const [filteredData, setFilteredData] = useState(sampleIncidents); // Shared filtered data
+
+    const [filteredData, setFilteredData] = useState(
+        sampleIncidents.filter((incident) => incident.date >= currentYearStart)
+    );
 
     // Top card
     // Assigned colour for different incident state
@@ -559,11 +630,15 @@ const Incidents = () => {
 
         switch (selectedFilter) {
             case 'Today':
+                const todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0); // Start of the day
+                const todayEnd = new Date();
+                todayEnd.setHours(23, 59, 59, 999); // End of the day
                 filtered = sampleIncidents.filter(
-                (incident) => incident.date.toDateString() === now.toDateString()
+                    (incident) => incident.date >= todayStart && incident.date <= todayEnd
                 );
-                setFromDate(now);
-                setToDate(now);
+                setFromDate(todayStart);
+                setToDate(todayEnd);
                 break;
             case '7 Days':
                 const startOfLast7Days = new Date();
@@ -603,10 +678,13 @@ const Incidents = () => {
                 }
                 break;
             default:
-                // Default to show all incidents
-                filtered = sampleIncidents;
-                setFromDate(new Date('2000-01-01')); // Arbitrary past date
-                setToDate(today);
+                const currentYearStart = new Date(today.getFullYear(), 0, 1);
+                filtered = sampleIncidents.filter(
+                    (incident) => incident.date >= currentYearStart
+                );
+                setFromDate(currentYearStart);
+                setToDate(now);
+                break;
         }
 
         setFilteredData(filtered); // Update the shared filtered data
@@ -678,7 +756,7 @@ const Incidents = () => {
             case 'Today':
                 return format(today, 'dd MMM yyyy');
             case '7 Days':
-                const sevenDaysAgo = subDays(today, 7);
+                const sevenDaysAgo = subDays(today, 6);
                 return `${format(sevenDaysAgo, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
             case 'Year':
                 return `${format(yearStart, 'dd MMM yyyy')} - ${format(today, 'dd MMM yyyy')}`;
@@ -752,24 +830,37 @@ const Incidents = () => {
 
      // chart 2.1.1
     // Prepare Stacked Bar Chart Data for Incident Categories
-    const stackedBarChartData = prepareStackedBarChartData(filteredSlaIncidents);
+    const stackedBarChartData = prepareStackedBarChartData(filteredSlaIncidents, filter);
+    
+    console.log("stacked", stackedBarChartData);
 
     // chart 3.1.4
     // Group incidents by priority and status
-    const groupIncidentsByPriorityAndStatus = (incidents) => {
+    const groupIncidentsByPriorityAndStatus = (incidents, filter) => {
+
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1); // Start of the current year
+
+        // Filter incidents for the "All" case or use the full dataset for other cases
+        const filteredIncidents = filter === 'All'
+            ? incidents.filter((incident) => incident.date >= startOfYear)
+            : incidents;
+
         const groupedData = {
-        Critical: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
-        High: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
-        Moderate: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
-        Low: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
-        Planning: { Open: 0, "In Progress": 0, Closed: 0, Unassigned: 0 },
+            Critical: { Open: 0, "In Progress": 0, "On Hold": 0, Resolved: 0, Closed: 0, Unassigned: 0 },
+            High: { Open: 0, "In Progress": 0, "On Hold": 0, Resolved: 0, Closed: 0, Unassigned: 0 },
+            Moderate: { Open: 0, "In Progress": 0, "On Hold": 0, Resolved: 0, Closed: 0, Unassigned: 0 },
+            Low: { Open: 0, "In Progress": 0, "On Hold": 0, Resolved: 0, Closed: 0, Unassigned: 0 },
+            Planning: { Open: 0, "In Progress": 0, "On Hold": 0, Resolved: 0, Closed: 0, Unassigned: 0 },
         };
     
-        incidents.forEach((incident) => {
-        if (groupedData[incident.priority]) {
-            groupedData[incident.priority][incident.state]++;
-        }
+        // Group filtered incidents by priority and status
+        filteredIncidents.forEach((incident) => {
+            if (groupedData[incident.priority]) {
+                groupedData[incident.priority][incident.state]++;
+            }
         });
+
         return groupedData;
     };
     
@@ -791,6 +882,16 @@ const Incidents = () => {
             backgroundColor: "#f1c40f",
             },
             {
+            label: "On Hold",
+            data: Object.values(groupedData).map((priority) => priority["On Hold"]),
+            backgroundColor: "#9c27b0",
+            },
+            {
+            label: "Resolved",
+            data: Object.values(groupedData).map((priority) => priority.Resolved),
+            backgroundColor: "#4caf50",
+            },
+            {
             label: "Closed",
             data: Object.values(groupedData).map((priority) => priority.Closed),
             backgroundColor: "#95a5a6",
@@ -799,7 +900,7 @@ const Incidents = () => {
             label: "Unassigned",
             data: Object.values(groupedData).map((priority) => priority.Unassigned),
             backgroundColor: "#4B4B4B",
-            },
+            },    
         ],
         };
     };
@@ -811,18 +912,30 @@ const Incidents = () => {
         responsive: true,
         maintainAspectRatio: false, // Allows the chart to resize dynamically
         plugins: {
-        legend: { position: "top" },
-        tooltip: {
-            callbacks: {
-            label: function (context) {
-                const value = context.raw;
-                if (value === 0) {
-                return null; // Hide tooltip for zero values
-                }
-                return `${context.dataset.label}: ${value}`;
+        legend: { 
+            position: "top" ,
+            labels: {
+                boxWidth: 12, // Adjusts the size of the color boxes
+                boxHeight: 12, // Adjusts the height of the color boxes (Chart.js v4+)
+                font: {
+                    size: 10, // Adjusts the font size of the legend text
+                    weight: 'normal', // Adjusts font weight (e.g., 'bold', 'normal')
+                },
+                padding: 10, // Adjusts spacing around the legend items
+                // usePointStyle: true, // Use a circle instead of a square for the legend box
             },
             },
-        },
+            tooltip: {
+                callbacks: {
+                label: function (context) {
+                    const value = context.raw;
+                    if (value === 0) {
+                    return null; // Hide tooltip for zero values
+                    }
+                    return `${context.dataset.label}: ${value}`;
+                },
+                },
+            },
         datalabels: {
             display: false, // Disable data labels on bars
         },
@@ -842,7 +955,7 @@ const Incidents = () => {
 
     // chart 3.1.3
     // Group incidents by priority and status
-    const groupedData = groupIncidentsByPriorityAndStatus(filteredSlaIncidents);
+    const groupedData = groupIncidentsByPriorityAndStatus(filteredSlaIncidents, filter);
 
     // chart 3.1.1
     // Prepare Vertical Bar Chart for Priorities
@@ -1186,7 +1299,7 @@ const Incidents = () => {
                         }}
                     >
                         <Typography variant="h7" gutterBottom>
-                            Incident Categories
+                            Incident Categories (%)
                         </Typography>
                         <div style={{ height: '260px', width: '100%' }}>
                             <Bar data={stackedBarChartData} options={stackedBarChartOptions} />
