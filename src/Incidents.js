@@ -115,11 +115,26 @@ const generateRandomIncidents = (count) => {
     };
 
     for (let i = 1; i <= count; i++) {
+        const isLongAgo = Math.random() < 0.3; // 30% chance for dates more than 30 days in the past
 
-        // Generate random days, with a 20% chance of being more than 30 days
-        const randomDays = Math.random() < 0.8 
-        ? Math.floor(Math.random() * 30)  // 80% chance: within 30 days
-        : Math.floor(Math.random() * 30) + 31; // 20% chance: more than 30 days
+        // Generate random days for the creation date
+        const randomDaysCreation = isLongAgo
+            ? Math.floor(Math.random() * 30) + 31 // More than 30 days ago
+            : Math.floor(Math.random() * 30); // Within the past 30 days
+        const creationDate = subDays(new Date(), randomDaysCreation);
+
+        // Ensure opened date is after creation date
+        const additionalDaysOpened = Math.floor(Math.random() * 7) + 1; // Opened date at least 1 day after creation date
+        const openedDate = subDays(creationDate, -additionalDaysOpened);
+
+        // Ensure lastUpdated is on or after opened date
+        const isLastUpdatedMoreThan7Days = Math.random() < 0.5; // 50% chance
+        const additionalDaysLastUpdated = isLastUpdatedMoreThan7Days
+            ? Math.floor(Math.random() * 7) + 7 // At least 7 days after opened
+            : Math.floor(Math.random() * 7); // Within 7 days after opened
+
+        const lastUpdatedDate = subDays(openedDate, -additionalDaysLastUpdated);
+
 
         const randomState = states[Math.floor(Math.random() * states.length)];
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
@@ -134,9 +149,9 @@ const generateRandomIncidents = (count) => {
             category: randomCategory,
             sla: randomSLA,
             priority: randomPriority, // Added priority levels
-            date: subDays(new Date(), randomDays),
-            lastUpdated: subDays(new Date(), randomDays), // Random last updated date
-            opened: subDays(new Date(), randomDays), // Random opened date
+            date: creationDate, // Ensure this is always before opened
+            lastUpdated: lastUpdatedDate, // Assign lastUpdated after or same as opened
+            opened: openedDate, // Ensure this is after creationDate
             shortDescription: randomDescription,
             });
     }
@@ -961,18 +976,39 @@ const Incidents = () => {
     // Prepare Vertical Bar Chart for Priorities
     const priorityBarChartData = preparePriorityChartData(groupedData);
 
+    const getOverdueIncidents = (incidents) => {
+        const currentYear = new Date().getFullYear(); // Get the current year
+        return incidents.filter(
+            (incident) =>
+                (incident.state === "Open" || incident.state === "In Progress") && // Only open or in-progress incidents
+                new Date(incident.opened).getFullYear() === currentYear && // Ensure it's within the current year
+                new Date(incident.opened) <= subDays(new Date(), 30) // Opened more than 30 days ago
+        );
+    };
+
     // card 1.1 
     // function for Overdue Incidents
-    const openIncidentsMoreThan30Days = sampleIncidents.filter(
-    (incident) => 
-        incident.state !== "Closed" && 
-        incident.date <= subDays(new Date(), 30)
-    ).length;
+    const openIncidentsMoreThan30Days = getOverdueIncidents(sampleIncidents).length;
+
+    // function for unassigned incidents
+    const getUnassignedIncidents = (incidents) => {
+        const currentYear = new Date().getFullYear();
+    
+        return incidents.filter((incident) => {
+            const incidentYear = new Date(incident.date).getFullYear();
+            return incident.state === "Unassigned" && incidentYear === currentYear;
+        });
+    };
 
     // card 3.2
-    // Filter for Unassigned Incidents
+    // Filter for Unassigned Incidents count
     const getUnassignedIncidentsCount = (incidents) => {
-    return incidents.filter((incident) => incident.state === "Unassigned").length;
+        const currentYear = new Date().getFullYear();
+    
+        return incidents.filter((incident) => {
+            const incidentYear = new Date(incident.date).getFullYear();
+            return incident.state === "Unassigned" && incidentYear === currentYear;
+        }).length;
     };
 
     // card 3.1
@@ -980,11 +1016,30 @@ const Incidents = () => {
     const unassignedCount = getUnassignedIncidentsCount(sampleIncidents);
 
     // card 2.3
-    // Filter incidents not updated in the last 7 days
+    // Filter incidents not updated since opened
     const filterIncidentsNotUpdated = (incidents) => {
-        const sevenDaysAgo = subDays(new Date(), 7);
-        return incidents.filter((incident) => incident.lastUpdated < sevenDaysAgo);
+        const currentYear = new Date().getFullYear(); // Get the current year
+    
+        return incidents.filter((incident) => {
+            const openedDate = new Date(incident.opened); // Parse the opened date
+            const lastUpdatedDate = new Date(incident.lastUpdated); // Parse the last updated date
+    
+            // Ensure the incident is within the current year
+            const isInCurrentYear = openedDate.getFullYear() === currentYear;
+    
+            // Calculate the difference in days between opened and last updated
+            const differenceInDays = (lastUpdatedDate - openedDate) / (1000 * 60 * 60 * 24);
+    
+            // Check if the difference is greater than 7 days
+            const isMoreThan7Days = differenceInDays > 7;
+    
+            // Exclude incidents with "Resolved" or "Closed" states
+            const isActiveState = incident.state !== "Resolved" && incident.state !== "Closed";
+    
+            return isInCurrentYear && isMoreThan7Days && isActiveState; // Combine all conditions
+        });
     };
+    
     
     // card 2.2
     // Get count of incidents not updated in 7 days
@@ -1202,6 +1257,23 @@ const Incidents = () => {
                     style={{ display: 'flex' }}
                 >
                     <Card
+                        onClick={() => {
+                            setFilteredData(
+                                filteredSlaIncidents.filter((incident) => {
+                                    const incidentYear = new Date(incident.date).getFullYear(); // Get the year of the incident
+                                    const currentYear = new Date().getFullYear(); // Current year check
+                        
+                                    // Logic for filtering based on the dashboard item's label
+                                    if (item.label === 'Total') {
+                                        return incidentYear === currentYear; // Include all incidents for the current year
+                                    }
+                                    return (
+                                        incident.state === item.label && // Match the incident state with the card label
+                                        incidentYear === currentYear // Ensure the incident is from the current year
+                                    );
+                                })
+                            );
+                        }}
                         style={{
                             display: 'flex', // Flexbox for horizontal alignment
                             alignItems: 'center', // Align items vertically
@@ -1209,7 +1281,15 @@ const Incidents = () => {
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                             flex: 1,
                             padding: '16px', // Add padding for inner spacing
+                            cursor: 'pointer', // Make the card clickable
+                            transition: 'box-shadow 0.3s ease', // Smooth hover effect
                         }}
+                        onMouseEnter={(e) =>
+                            (e.currentTarget.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.3)") // Add shadow on hover
+                        }
+                        onMouseLeave={(e) =>
+                            (e.currentTarget.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)") // Reset shadow when not hovered
+                        }
                     >
                         {/* Circular Icon */}
                         <div
@@ -1340,193 +1420,191 @@ const Incidents = () => {
     
                 {/* Overdue Incidents */}
                 <div
-                style={{
-                    padding: "10px 20px", // Reduced padding for tighter layout
-                    borderRadius: "8px",
-                    boxSizing: "border-box",
-                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                    height: "120px", // Slightly increased height for better spacing
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                }}
-                >
-                <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between", // Space between the left and right sections
-                    width: "100%",
-                }}
-                >
-                {/* Left Section: Title and Subtitle */}
-                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1 }}>
-                    <span style={{ fontWeight: "bold", fontSize: "20px", marginBottom: "5px" }}>Overdue Incidents</span>
-                    <span style={{ fontSize: "12px", color: "grey" }}>More than 30 days</span>
-                </div>
-    
-                {/* Right Section: Count and Date Range */}
-                <div
+                    onClick={() => setFilteredData(getOverdueIncidents(sampleIncidents))} // Filter data on click
                     style={{
-                    display: "flex",
-                    flexDirection: "column", // Stack the count and date range vertically
-                    alignItems: "flex-end", // Align to the right
-                    justifyContent: "center", // Vertically center the content
+                        padding: "10px 20px",
+                        borderRadius: "8px",
+                        boxSizing: "border-box",
+                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)", // Box shadow effect
+                        height: "120px",
+                        display: "flex",
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        cursor: "pointer", // Makes the card clickable
+                        transition: "box-shadow 0.3s ease", // Smooth hover effect
                     }}
-                >
-                    {/* Count */}
-                    <span
-                    style={{
-                        fontSize: "30px", // Increased size for emphasis
-                        color: "#2196F3",
-                        fontWeight: "bold",
-                        lineHeight: "1",
-                        marginBottom: "5px", // Space between count and date range
-                    }}
+                    onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.3)") // Add shadow on hover
+                    }
+                    onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)") // Reset shadow when not hovered
+                    }
                     >
-                    {openIncidentsMoreThan30Days}
-                    </span>
-    
-                    {/* Date Range */}
-                    <span
-                    style={{
-                        fontSize: "12px",
-                        color: "grey",
-                        lineHeight: "1",
-                    }}
-                    >
-                    {`Jan 1, ${new Date().getFullYear()} - ${new Date().toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                    })}`}
-                    </span>
-                </div>
-                </div>
-    
-    
-                
+                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1 }}>
+                        <span style={{ fontWeight: "bold", fontSize: "20px", marginBottom: "5px" }}>Overdue Incidents</span>
+                        <span style={{ fontSize: "12px", color: "grey" }}>More than 30 days</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center" }}>
+                        <span style={{ fontSize: "30px", color: "#2196F3", fontWeight: "bold", lineHeight: "1", marginBottom: "5px" }}>
+                            {openIncidentsMoreThan30Days}
+                        </span>
+                        <span style={{ fontSize: "12px", color: "grey", lineHeight: "1" }}>
+                            {`Jan 1, ${new Date().getFullYear()} - ${new Date().toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                            })}`}
+                        </span>
+                    </div>
                 </div>
     
                 {/* Stale Incidents */}
                 <div
-                style={{
-                    padding: "20px",
-                    borderRadius: "8px",
-                    boxSizing: "border-box",
-                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                    height: "106px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between", // Space between left and right sections
-                }}
+                    onClick={() => setFilteredData(filterIncidentsNotUpdated(sampleIncidents))}
+                    style={{
+                        padding: "20px",
+                        borderRadius: "8px",
+                        boxSizing: "border-box",
+                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)", // Box shadow effect
+                        height: "106px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between", // Space between left and right sections
+                        cursor: "pointer", // Makes the card clickable
+                        transition: "box-shadow 0.3s ease", // Smooth hover effect
+                    }}
+                    onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.3)") // Add shadow on hover
+                    }
+                    onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)") // Reset shadow when not hovered
+                    }
                 >
-                {/* Left Section */}
-                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1 }}>
-                    <span style={{ fontWeight: "bold", fontSize: "20px", marginBottom: "5px" }}>Stale Incidents</span>
-                    <span style={{ fontSize: "12px", color: "grey" }}>Not updated for more than 7 days</span>
-                </div>
-    
-                {/* Right Section */}
-                <div
-                    style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end", // Align to the right
-                    justifyContent: "center", // Vertically center
-                    }}
-                >
-                    {/* Count */}
-                    <span
-                    style={{
-                        fontSize: "30px", // Bigger font for emphasis
-                        color: "#2196F3",
-                        fontWeight: "bold",
-                        lineHeight: "1",
-                        marginBottom: "5px", // Space between count and date range
-                    }}
+                    {/* Left Section */}
+                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1 }}>
+                        <span style={{ fontWeight: "bold", fontSize: "20px", marginBottom: "5px" }}>Stale Incidents</span>
+                        <span style={{ fontSize: "12px", color: "grey" }}>Not updated for more than 7 days</span>
+                    </div>
+
+                    {/* Right Section */}
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-end", // Align to the right
+                            justifyContent: "center", // Vertically center
+                        }}
                     >
-                    {countNotUpdated}
-                    </span>
-    
-                    {/* Date Range */}
-                    <span
-                    style={{
-                        fontSize: "12px",
-                        color: "grey",
-                        lineHeight: "1",
-                    }}
-                    >
-                    {`${new Date(new Date().setDate(new Date().getDate() - 7)).toLocaleDateString("en-US", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                    })} - ${new Date().toLocaleDateString("en-US", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                    })}`}
-                    </span>
-                </div>
+                        {/* Count */}
+                        <span
+                            style={{
+                                fontSize: "30px", // Bigger font for emphasis
+                                color: "#2196F3",
+                                fontWeight: "bold",
+                                lineHeight: "1",
+                                marginBottom: "5px", // Space between count and date range
+                            }}
+                        >
+                            {countNotUpdated}
+                        </span>
+
+                        {/* Date Range */}
+                        <span
+                            style={{
+                                fontSize: "12px",
+                                color: "grey",
+                                lineHeight: "1",
+                            }}
+                        >
+                            {`Jan 1, ${new Date().getFullYear()} - ${new Date().toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                            })}`}
+                        </span>
+                    </div>
                 </div>
     
                 {/* Unassigned Incidents */}
                 <div
-                style={{
-                    padding: "20px",
-                    borderRadius: "8px",
-                    boxSizing: "border-box",
-                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                    height: "106px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                }}
+                    onClick={() => setFilteredData(getUnassignedIncidents(sampleIncidents))}
+                    style={{
+                        padding: "20px",
+                        borderRadius: "8px",
+                        boxSizing: "border-box",
+                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                        height: "106px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: "pointer", // Make it clickable
+                        transition: "box-shadow 0.3s ease", // Add smooth hover effect
+                    }}
+                    onMouseEnter={(e) =>
+                        (e.currentTarget.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.3)")
+                    } // Add shadow on hover
+                    onMouseLeave={(e) =>
+                        (e.currentTarget.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)")
+                    } // Reset shadow on hover leave
                 >
-                {/* Left Section: Title and Subtitle */}
-                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1 }}>
-                    <span style={{ fontWeight: "bold", fontSize: "20px", marginBottom: "5px" }}>Unassigned</span>
-                    <span style={{ fontSize: "12px", color: "grey" }}>
-                    Incidents without assignment
-                    </span>
-                </div>
-    
-                {/* Right Section: Count and Date */}
-                <div
-                    style={{
-                    display: "flex",
-                    flexDirection: "column", // Stack count and date vertically
-                    alignItems: "flex-end", // Align to the right
-                    justifyContent: "center",
-                    height: "100%", // Ensure full height alignment
-                    }}
-                >
-                    <span
-                    style={{
-                        fontSize: "30px", // Large font for count
-                        color: "#2196F3",
-                        fontWeight: "bold",
-                        lineHeight: "1",
-                    }}
+                    {/* Left Section: Title and Subtitle */}
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            flexGrow: 1,
+                        }}
                     >
-                    {unassignedCount}
-                    </span>
-                    <span
-                    style={{
-                        fontSize: "12px", // Smaller font for date
-                        color: "grey",
-                        marginTop: "5px", // Spacing below the count
-                    }}
+                        <span
+                            style={{
+                                fontWeight: "bold",
+                                fontSize: "20px",
+                                marginBottom: "5px",
+                            }}
+                        >
+                            Unassigned
+                        </span>
+                        <span style={{ fontSize: "12px", color: "grey" }}>
+                            Incidents without assignment
+                        </span>
+                    </div>
+
+                    {/* Right Section: Count and Date */}
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column", // Stack count and date vertically
+                            alignItems: "flex-end", // Align to the right
+                            justifyContent: "center",
+                            height: "100%", // Ensure full height alignment
+                        }}
                     >
-                    {`Jan 1, ${new Date().getFullYear()} - ${new Date().toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                    })}`}
-                    </span>
-                </div>
-    
+                        <span
+                            style={{
+                                fontSize: "30px", // Large font for count
+                                color: "#2196F3",
+                                fontWeight: "bold",
+                                lineHeight: "1",
+                            }}
+                        >
+                            {unassignedCount}
+                        </span>
+                        <span
+                            style={{
+                                fontSize: "12px", // Smaller font for date
+                                color: "grey",
+                                marginTop: "5px", // Spacing below the count
+                            }}
+                        >
+                            {`Jan 1, ${new Date().getFullYear()} - ${new Date().toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                            })}`}
+                        </span>
+                    </div>
                 </div>
     
     
@@ -1569,7 +1647,9 @@ const Incidents = () => {
                             <TableRow>
                                 {[
                                 { label: "Number", key: "number" },
+                                { label: "Date", key: "date" },
                                 { label: "Opened", key: "opened" },
+                                { label: "Last Updated", key: "lastUpdated" },
                                 { label: "Short Description", key: "shortDescription" },
                                 { label: "Priority", key: "priority" },
                                 { label: "State", key: "state" },
@@ -1600,7 +1680,9 @@ const Incidents = () => {
                                 .map((row) => (
                                 <TableRow key={row.number}>
                                     <TableCell>{row.number}</TableCell>
+                                    <TableCell>{new Date(row.date).toLocaleDateString('en-US')}</TableCell>
                                     <TableCell>{new Date(row.opened).toLocaleDateString('en-US')}</TableCell>
+                                    <TableCell>{new Date(row.lastUpdated).toLocaleDateString('en-US')}</TableCell>
                                     <TableCell>{row.shortDescription}</TableCell>
                                     <TableCell>{row.priority}</TableCell>
                                     <TableCell>{row.state}</TableCell>
